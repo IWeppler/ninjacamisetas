@@ -1,19 +1,36 @@
 import { Venta } from "@/entities/ventas/types";
 import { Camiseta } from "@/entities/camisetas/types";
 
+export type PeriodoDashboard =
+  | "mes"
+  | "trimestre"
+  | "semestre"
+  | "anio"
+  | "historico";
+
 export function getDashboardMetrics(
   ventas: Venta[],
   camisetas: Camiseta[],
-  periodo: "mes" | "historico" = "mes",
+  periodo: PeriodoDashboard = "mes",
 ) {
   const now = new Date();
-  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  let startDate = new Date(0);
 
-  // 1. Contexto Temporal Consistente (Afecta KPIs y Rankings)
+  if (periodo === "mes") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (periodo === "trimestre") {
+    startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  } else if (periodo === "semestre") {
+    startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  } else if (periodo === "anio") {
+    startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  }
+
+  // 1. Contexto Temporal Consistente
   const ventasFiltradas =
-    periodo === "mes"
-      ? ventas.filter((v) => new Date(v.fecha_venta) >= startOfThisMonth)
-      : ventas;
+    periodo === "historico"
+      ? ventas
+      : ventas.filter((v) => new Date(v.fecha_venta) >= startDate);
 
   // --- CORE KPIs ---
   let ingresos = 0;
@@ -120,7 +137,7 @@ export function getDashboardMetrics(
     stockTotalUnidades,
     stockValorizadoCosto,
     productosCriticos,
-    topProductos: topProductosUnidades, // Exportamos el top de rotación (más vendidos)
-    topProductosRentables, // Exportamos el top de rentabilidad (dejan más margen)
+    topProductos: topProductosUnidades,
+    topProductosRentables,
   };
 }

@@ -5,7 +5,7 @@ import { Camiseta } from "@/entities/camisetas/types";
 import { StockTable } from "./stock-table";
 import { StockGrid } from "./stock-grid";
 import { Button } from "@/shared/ui/button";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { CrearCamisetaModal } from "./stock-modal";
 import { FilterToolbar } from "@/shared/ui/filter-toolbar";
 
@@ -15,6 +15,10 @@ interface StockViewProps {
 
 export function StockView({ camisetas }: Readonly<StockViewProps>) {
   const [view, setView] = useState<"table" | "grid">("table");
+
+  // --- NUEVO: Paginación ---
+  const ITEMS_POR_PAGINA = 10;
+  const [paginaActual, setPaginaActual] = useState(1);
 
   // Estados de filtros para Stock
   const [filtroEquipo, setFiltroEquipo] = useState("");
@@ -36,6 +40,7 @@ export function StockView({ camisetas }: Readonly<StockViewProps>) {
       const temporada = camiseta.temporada?.toLowerCase() || "";
       const tipo = camiseta.tipo?.toLowerCase() || "";
 
+      // Para el talle en stock, verificamos si existe en el array de stock y tiene cantidad > 0
       let tieneTalle = false;
       if (filtroTalle === "todos") {
         tieneTalle = true;
@@ -84,12 +89,44 @@ export function StockView({ camisetas }: Readonly<StockViewProps>) {
     orden,
   ]);
 
+  // --- NUEVO: Lógica de Paginación ---
+  const totalPaginas = Math.ceil(
+    camisetasFiltradasYOrdenadas.length / ITEMS_POR_PAGINA,
+  );
+  const camisetasPaginadas = camisetasFiltradasYOrdenadas.slice(
+    (paginaActual - 1) * ITEMS_POR_PAGINA,
+    paginaActual * ITEMS_POR_PAGINA,
+  );
+
   const limpiarFiltros = () => {
     setFiltroEquipo("");
     setFiltroTemporada("");
     setFiltroTipo("todos");
     setFiltroTalle("todos");
     setOrden("recientes");
+    setPaginaActual(1); // Reiniciamos paginación al limpiar
+  };
+
+  // Funciones wrapper para reiniciar la paginación al filtrar
+  const handleFiltroEquipo = (v: string) => {
+    setFiltroEquipo(v);
+    setPaginaActual(1);
+  };
+  const handleFiltroTemporada = (v: string) => {
+    setFiltroTemporada(v);
+    setPaginaActual(1);
+  };
+  const handleFiltroTipo = (v: string) => {
+    setFiltroTipo(v);
+    setPaginaActual(1);
+  };
+  const handleFiltroTalle = (v: string) => {
+    setFiltroTalle(v);
+    setPaginaActual(1);
+  };
+  const handleOrden = (v: string) => {
+    setOrden(v);
+    setPaginaActual(1);
   };
 
   const hayFiltrosActivos =
@@ -135,26 +172,69 @@ export function StockView({ camisetas }: Readonly<StockViewProps>) {
     <div className="space-y-4">
       <FilterToolbar
         searchQuery={filtroEquipo}
-        onSearchChange={setFiltroEquipo}
+        onSearchChange={handleFiltroEquipo}
         searchPlaceholder="Buscar por equipo..."
         temporada={filtroTemporada}
-        onTemporadaChange={setFiltroTemporada}
+        onTemporadaChange={handleFiltroTemporada}
         tipo={filtroTipo}
-        onTipoChange={setFiltroTipo}
+        onTipoChange={handleFiltroTipo}
         talle={filtroTalle}
-        onTalleChange={setFiltroTalle}
+        onTalleChange={handleFiltroTalle}
         orden={orden}
-        onOrdenChange={setOrden}
+        onOrdenChange={handleOrden}
         ordenOptions={ordenOptions}
         onLimpiar={limpiarFiltros}
         hayFiltrosActivos={hayFiltrosActivos}
         actionButtons={actionButtons}
       />
 
+      {/* Le pasamos el array PAGINADO a las vistas */}
       {view === "table" ? (
-        <StockTable camisetas={camisetasFiltradasYOrdenadas} />
+        <StockTable camisetas={camisetasPaginadas} />
       ) : (
-        <StockGrid camisetas={camisetasFiltradasYOrdenadas} />
+        <StockGrid camisetas={camisetasPaginadas} />
+      )}
+
+      {/* CONTROLES DE PAGINACIÓN */}
+      {totalPaginas > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 border-t border-border mt-4">
+          <span className="text-sm text-muted-foreground">
+            Mostrando{" "}
+            {Math.min(
+              camisetasFiltradasYOrdenadas.length,
+              (paginaActual - 1) * ITEMS_POR_PAGINA + 1,
+            )}{" "}
+            a{" "}
+            {Math.min(
+              camisetasFiltradasYOrdenadas.length,
+              paginaActual * ITEMS_POR_PAGINA,
+            )}{" "}
+            de {camisetasFiltradasYOrdenadas.length} camisetas
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+              disabled={paginaActual === 1}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+            </Button>
+            <div className="text-sm font-medium px-4">
+              Página {paginaActual} de {totalPaginas}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPaginaActual((p) => Math.min(totalPaginas, p + 1))
+              }
+              disabled={paginaActual === totalPaginas}
+            >
+              Siguiente <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

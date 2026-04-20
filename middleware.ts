@@ -37,23 +37,29 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
+  const pathname = request.nextUrl.pathname;
 
-  // Si NO hay usuario y la ruta NO es /auth -> Redirigir a /auth
-  if (!user && !isAuthRoute) {
+  // Identificamos los tipos de ruta
+  const isAuthRoute = pathname.startsWith("/auth");
+
+  // 💡 Aquí definimos cuáles son las rutas públicas de tu tienda
+  const isPublicRoute = pathname.startsWith("/store");
+
+  // 1. Si NO hay usuario, y NO es ruta de Auth, y NO es ruta Pública -> Redirigir al Login
+  if (!user && !isAuthRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth";
     return NextResponse.redirect(url);
   }
 
-  // Si SÍ hay usuario y trata de ir a /auth -> Redirigir al inicio (Dashboard)
+  // 2. Si SÍ hay usuario y trata de ir al Login -> Redirigir al Dashboard
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
-  // Si todo está bien, permitimos que la petición continúe
+  // 3. En cualquier otro caso (ruta pública, o usuario logueado en ruta privada), dejamos pasar
   return supabaseResponse;
 }
 

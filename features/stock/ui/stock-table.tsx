@@ -13,9 +13,10 @@ import { Badge } from "@/shared/ui/badge";
 import { Image as ImageIcon } from "lucide-react";
 import { EditarCamisetaModal } from "./editar-modal";
 import { EliminarCamisetaModal } from "./eliminar-modal";
+import { TogglePublicado } from "./toggle-publicado";
 
 interface StockTableProps {
-  camisetas: readonly Camiseta[];
+  camisetas: Camiseta[];
 }
 
 const formatearMoneda = (monto: number) => {
@@ -47,6 +48,7 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
             <TableHead>Temporada</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Stock por Talle</TableHead>
+            <TableHead className="text-center">Visible</TableHead>
             <TableHead className="text-right">Costo</TableHead>
             <TableHead className="text-right">Precio</TableHead>
             <TableHead className="text-right w-[100px]">Acciones</TableHead>
@@ -75,6 +77,7 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
               }
             }
 
+            // Calculamos la ganancia unitaria estimada (Venta - Costo) de forma tipada
             const precioCosto = camiseta.precio_costo || 0;
             const margenEstiado = camiseta.precio - precioCosto;
 
@@ -123,6 +126,13 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
                       </span>
                     )}
                   </div>
+                </TableCell>
+
+                <TableCell className="text-center">
+                  <TogglePublicado
+                    id={camiseta.id}
+                    publicadoInicial={camiseta.publicado ?? true}
+                  />
                 </TableCell>
 
                 <TableCell className="text-right text-muted-foreground font-medium">

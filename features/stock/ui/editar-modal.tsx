@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -72,8 +73,24 @@ export function EditarCamisetaModal({
     { error: null, success: false },
   );
 
+  // Procesamos las imágenes existentes en la base de datos
+  let imagenesExistentes: string[] = [];
+  if (Array.isArray(camiseta.imagen_url)) {
+    imagenesExistentes = camiseta.imagen_url;
+  } else if (typeof camiseta.imagen_url === "string") {
+    try {
+      const parsed = JSON.parse(camiseta.imagen_url);
+      imagenesExistentes = Array.isArray(parsed)
+        ? parsed
+        : [camiseta.imagen_url];
+    } catch {
+      imagenesExistentes = [camiseta.imagen_url];
+    }
+  }
+
   // Función para obtener el stock actual de un talle específico
   const getStockParaTalle = (talleBuscado: string) => {
+    // Normalizamos minúsculas por si acaso
     const stockTalle = camiseta.stock?.find(
       (s) => s.talle.toLowerCase() === talleBuscado.toLowerCase(),
     );
@@ -86,7 +103,7 @@ export function EditarCamisetaModal({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-muted-foreground/80 hover:bg-muted/50 dark:hover:bg-muted/20 transition-colors"
+          className="h-8 w-8 text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors cursor-pointer"
           title="Editar camiseta"
         >
           <Pencil className="h-4 w-4" />
@@ -97,11 +114,14 @@ export function EditarCamisetaModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Camiseta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulario para editar los detalles, precios, imágenes y stock de la
+            camiseta.
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[80vh]">
           <form action={formAction} className="space-y-6 mt-4 px-1 pb-2">
-            {/* Input oculto con el ID de la camiseta para el Server Action */}
             <input type="hidden" name="id" value={camiseta.id} />
 
             <div className="grid grid-cols-2 gap-4">
@@ -118,7 +138,7 @@ export function EditarCamisetaModal({
                 <Label htmlFor="temporada">Temporada</Label>
                 <Select name="temporada" defaultValue={camiseta.temporada}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona temporada..." />
+                    <SelectValue placeholder="Selecciona..." />
                   </SelectTrigger>
                   <SelectContent>
                     {TEMPORADA_OPTIONS.filter(
@@ -133,25 +153,28 @@ export function EditarCamisetaModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select name="tipo" defaultValue={camiseta.tipo.toLowerCase()}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPO_OPTIONS.filter((opt) => opt.value !== "todos").map(
-                      (opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select
+                name="tipo"
+                defaultValue={camiseta.tipo?.toLowerCase() || "local"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIPO_OPTIONS.filter((opt) => opt.value !== "todos").map(
+                    (opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="precio_costo">Precio de Costo (ARS)</Label>
                 <Input
@@ -209,12 +232,15 @@ export function EditarCamisetaModal({
                 </Label>
               </div>
 
-              {archivos.length > 0 && (
+              {archivos.length > 0 ? (
                 <div className="flex flex-wrap gap-3 mt-3">
+                  <p className="w-full text-xs font-semibold text-blue-600 mb-1">
+                    Nuevas imágenes listas para subir:
+                  </p>
                   {archivos.map((file, index) => (
                     <div
                       key={index}
-                      className="relative w-16 h-16 rounded-md overflow-hidden border border-border bg-muted group"
+                      className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-blue-500 bg-muted"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -225,14 +251,33 @@ export function EditarCamisetaModal({
                     </div>
                   ))}
                 </div>
-              )}
+              ) : imagenesExistentes.length > 0 ? (
+                <div className="flex flex-wrap gap-3 mt-3 opacity-80">
+                  <p className="w-full text-xs font-medium text-muted-foreground mb-1">
+                    Imágenes actuales en la tienda:
+                  </p>
+                  {imagenesExistentes.map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative w-16 h-16 rounded-md overflow-hidden border border-border bg-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img}
+                        alt={`Actual ${index}`}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <div className="border-t border-border pt-4">
               <h3 className="text-sm font-medium mb-3">
                 Actualizar Stock por Talle
               </h3>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-7 gap-2">
                 {TALLE_OPTIONS.filter((opt) => opt.value !== "todos").map(
                   (opt) => (
                     <div
@@ -241,13 +286,13 @@ export function EditarCamisetaModal({
                     >
                       <Label
                         htmlFor={`stock_edit_${camiseta.id}_${opt.value}`}
-                        className="text-xs text-muted-foreground"
+                        className="text-xs text-muted-foreground uppercase"
                       >
                         {opt.label}
                       </Label>
                       <Input
                         id={`stock_edit_${camiseta.id}_${opt.value}`}
-                        name={`stock_${opt.value}`}
+                        name={`stock_${opt.value.toLowerCase()}`} 
                         type="number"
                         min="0"
                         defaultValue={getStockParaTalle(opt.value)}

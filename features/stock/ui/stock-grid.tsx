@@ -13,7 +13,7 @@ interface StockGridProps {
 export function StockGrid({ camisetas }: Readonly<StockGridProps>) {
   if (camisetas.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg border border-border">
+      <div className="text-center py-12 bg-card border border-border">
         <p className="text-muted-foreground">
           No hay camisetas en el inventario.
         </p>
@@ -45,12 +45,12 @@ export function StockGrid({ camisetas }: Readonly<StockGridProps>) {
           }
         }
 
-        const precioCosto = (camiseta as any).precio_costo || 0;
+        const precioCosto = camiseta.precio_costo ?? 0;
 
         return (
           <div
             key={camiseta.id}
-            className="flex flex-col rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            className="flex flex-col border border-border bg-card text-card-foreground overflow-hidden"
           >
             {/* Contenedor de Imagen */}
             <div className="aspect-square bg-muted flex items-center justify-center relative border-b border-border">
@@ -68,7 +68,7 @@ export function StockGrid({ camisetas }: Readonly<StockGridProps>) {
               <div className="absolute top-3 right-3">
                 <Badge
                   variant="secondary"
-                  className="shadow-sm backdrop-blur-sm bg-background/80"
+                  className="backdrop-blur-sm bg-background/80"
                 >
                   {camiseta.tipo}
                 </Badge>

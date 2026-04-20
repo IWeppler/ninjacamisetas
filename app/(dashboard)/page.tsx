@@ -2,7 +2,11 @@ import { getVentasAction } from "@/features/sells/actions/get-venta";
 import { getCamisetasAction } from "@/features/stock/actions/stock";
 import { RegistrarVentaModal } from "@/features/sells/ui/venta-modal";
 import { CrearCamisetaModal } from "@/features/stock/ui/stock-modal";
-import { getDashboardMetrics } from "@/features/dashboard/lib/get-dashboard-metrics";
+import {
+  getDashboardMetrics,
+  PeriodoDashboard,
+} from "@/features/dashboard/lib/get-dashboard-metrics";
+import { PeriodSelector } from "@/features/dashboard/ui/period-selector";
 import {
   DollarSign,
   TrendingUp,
@@ -23,8 +27,18 @@ const formatearMoneda = (monto: number) => {
   }).format(monto);
 };
 
-export default async function DashboardPage() {
-  // 1. Obtenemos toda la data directamente de la base de datos
+interface PageProps {
+  searchParams: Promise<{ periodo?: string }>;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: Readonly<PageProps>) {
+  // 1. Capturamos los parámetros de búsqueda de la URL
+  const params = await searchParams;
+  const periodoParam = (params.periodo as PeriodoDashboard) || "mes";
+
+  // 2. Obtenemos toda la data directamente de la base de datos
   const [ventasResponse, camisetasResponse] = await Promise.all([
     getVentasAction(),
     getCamisetasAction(),
@@ -33,8 +47,17 @@ export default async function DashboardPage() {
   const ventas = ventasResponse.data || [];
   const camisetas = camisetasResponse.data || [];
 
-  // 2. Extraemos la lógica compleja al servicio de BI
-  const metrics = getDashboardMetrics(ventas, camisetas, "mes");
+  // 3. Extraemos la lógica compleja pasándole el período dinámico
+  const metrics = getDashboardMetrics(ventas, camisetas, periodoParam);
+
+  const periodoLabel =
+    {
+      mes: "del mes actual",
+      trimestre: "de los últimos 3 meses",
+      semestre: "de los últimos 6 meses",
+      anio: "del último año",
+      historico: "del histórico total",
+    }[periodoParam] || "del mes actual";
 
   return (
     <div className="space-y-8 pb-8">
@@ -43,10 +66,15 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Panel de Control</h1>
           <p className="text-gray-500 mt-1">
-            Resumen de inteligencia de negocio del mes actual.
+            Resumen de inteligencia de negocio {periodoLabel}.
           </p>
         </div>
-        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          {/* Aquí inyectamos el nuevo componente selector */}
+          <PeriodSelector defaultPeriod={periodoParam} />
+
+          <div className="hidden sm:block w-px h-8 bg-border/60 mx-1"></div>
+
           <CrearCamisetaModal />
           <RegistrarVentaModal camisetas={camisetas} />
         </div>
@@ -74,7 +102,7 @@ export default async function DashboardPage() {
                 {formatearMoneda(metrics.ingresos)}
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                Facturación bruta del mes
+                Facturación bruta del período
               </div>
             </div>
           </div>
@@ -159,7 +187,7 @@ export default async function DashboardPage() {
                 {formatearMoneda(metrics.stockValorizadoCosto)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Dinero inmovilizado en mercadería.
+                Dinero inmovilizado en mercadería actual.
               </p>
             </div>
 
@@ -229,7 +257,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="p-8 text-center text-sm text-gray-500 h-full flex items-center justify-center">
-                Aún no hay datos de ventas este mes.
+                Aún no hay datos de ventas en este período.
               </div>
             )}
           </div>
@@ -272,7 +300,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="p-8 text-center text-sm text-gray-500 h-full flex items-center justify-center">
-                Aún no hay datos de rentabilidad este mes.
+                Aún no hay datos de rentabilidad en este período.
               </div>
             )}
           </div>

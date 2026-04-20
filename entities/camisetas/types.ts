@@ -13,5 +13,7 @@ export interface Camiseta {
   precio_costo: number;
   imagen_url: string | null;
   creado_en: string;
+  publicado: boolean;
+  slug: string | null;
   stock?: CamisetaStock[];
 }
