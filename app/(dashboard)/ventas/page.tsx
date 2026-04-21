@@ -3,7 +3,6 @@ import { getCamisetasAction } from "@/features/stock/actions/stock";
 import { VentasTable } from "@/features/sells/ui/venta-table";
 
 export default async function VentasPage() {
-  // Obtenemos tanto las ventas como el stock de camisetas en paralelo
   const [ventasResponse, camisetasResponse] = await Promise.all([
     getVentasAction(),
     getCamisetasAction(),

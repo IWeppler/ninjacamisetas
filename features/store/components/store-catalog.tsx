@@ -10,13 +10,11 @@ import Link from "next/link";
 
 interface StoreCatalogProps {
   camisetas: Camiseta[];
-  numeroWhatsApp: string;
 }
 
-const ITEMS_POR_PAGINA = 12; // Aumentamos a 12 ya que el diseño es más limpio y entran más sin saturar
+const ITEMS_POR_PAGINA = 12;
 
 export function StoreCatalog({ camisetas }: Readonly<StoreCatalogProps>) {
-  // --- Estados de Filtros y Paginación ---
   const [searchQuery, setSearchQuery] = useState("");
   const [temporada, setTemporada] = useState("");
   const [tipo, setTipo] = useState("todos");
@@ -181,10 +179,9 @@ export function StoreCatalog({ camisetas }: Readonly<StoreCatalogProps>) {
                   key={camiseta.id}
                   className="group relative flex flex-col transition-all"
                 >
-                  {/* Imagen del Producto - CERO BORDES, CERO SOMBRAS */}
                   <Link
                     href={linkDestino}
-                    className="aspect-[4/5] bg-[#f7f7f7] relative overflow-hidden flex items-center justify-center block w-full"
+                    className="aspect-4/5 bg-[#f7f7f7] relative overflow-hidden flex items-center justify-center w-full"
                   >
                     {primeraImagen ? (
                       <>

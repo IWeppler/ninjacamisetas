@@ -232,33 +232,35 @@ export function EditarCamisetaModal({
                 </Label>
               </div>
 
-              {archivos.length > 0 ? (
+              {archivos.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3">
                   <p className="w-full text-xs font-semibold text-blue-600 mb-1">
                     Nuevas imágenes listas para subir:
                   </p>
-                  {archivos.map((file, index) => (
+                  {archivos.map((file) => (
                     <div
-                      key={index}
+                      key={file.name}
                       className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-blue-500 bg-muted"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={URL.createObjectURL(file)}
-                        alt={`Preview ${index}`}
+                        alt={`Preview ${file.name}`}
                         className="object-cover w-full h-full"
                       />
                     </div>
                   ))}
                 </div>
-              ) : imagenesExistentes.length > 0 ? (
+              )}
+
+              {archivos.length === 0 && imagenesExistentes.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3 opacity-80">
                   <p className="w-full text-xs font-medium text-muted-foreground mb-1">
                     Imágenes actuales en la tienda:
                   </p>
                   {imagenesExistentes.map((img, index) => (
                     <div
-                      key={index}
+                      key={img}
                       className="relative w-16 h-16 rounded-md overflow-hidden border border-border bg-muted"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -270,7 +272,7 @@ export function EditarCamisetaModal({
                     </div>
                   ))}
                 </div>
-              ) : null}
+              )}
             </div>
 
             <div className="border-t border-border pt-4">
@@ -292,7 +294,7 @@ export function EditarCamisetaModal({
                       </Label>
                       <Input
                         id={`stock_edit_${camiseta.id}_${opt.value}`}
-                        name={`stock_${opt.value.toLowerCase()}`} 
+                        name={`stock_${opt.value.toLowerCase()}`}
                         type="number"
                         min="0"
                         defaultValue={getStockParaTalle(opt.value)}

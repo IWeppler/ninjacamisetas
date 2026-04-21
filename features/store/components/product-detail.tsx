@@ -8,27 +8,26 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import { TALLE_OPTIONS } from "@/entities/camisetas/constants";
-import Image from "next/image";
+import { useCartStore } from "@/features/store/store/useCartStore";
+import { toast } from "sonner";
 
 interface ProductDetailProps {
   camiseta: Camiseta;
-  numeroWhatsApp: string;
-  baseUrl: string;
 }
 
-export function ProductDetail({
-  camiseta,
-  numeroWhatsApp,
-  baseUrl,
-}: Readonly<ProductDetailProps>) {
+export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
   const [talleSeleccionado, setTalleSeleccionado] = useState<string | null>(
     null,
   );
   const [errorTalle, setErrorTalle] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Traemos la función para agregar al carrito desde Zustand
+  const addItem = useCartStore((state) => state.addItem);
 
   // --- Procesamiento de todas las imágenes ---
   let imagenes: string[] = [];
@@ -61,31 +60,39 @@ export function ProductDetail({
     );
   };
 
-  // Manejador del botón de WhatsApp
-  const handleWhatsAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (estaAgotado) {
-      e.preventDefault();
-      return;
-    }
+  // --- NUEVO: Manejador del Carrito ---
+  const handleAddToCart = () => {
+    if (estaAgotado) return;
+
     if (!talleSeleccionado) {
-      e.preventDefault();
       setErrorTalle(true);
       return;
     }
     setErrorTalle(false);
-  };
 
-  const generarLinkWhatsApp = () => {
-    const linkProducto = camiseta.slug
-      ? `${baseUrl}/store/${camiseta.slug}`
-      : "";
-    const talleTexto = talleSeleccionado
-      ? `en talle *${talleSeleccionado}*`
-      : "";
+    // Buscamos el stock máximo disponible para este talle exacto
+    const stockDeTalle = camiseta.stock?.find(
+      (s) => s.talle.toLowerCase() === talleSeleccionado.toLowerCase(),
+    );
+    const stockMaximo = stockDeTalle ? stockDeTalle.cantidad : 0;
 
-    const mensaje = `¡Hola Ninja Camisetas! 🥷\n\nMe interesa comprar esta camiseta ${talleTexto}:\n👕 *${camiseta.equipo} (${camiseta.temporada})*\n💰 Precio: $${camiseta.precio.toLocaleString("es-AR")}\n\n¿Tienen stock disponible?\n${linkProducto}`;
+    if (stockMaximo <= 0) {
+      toast.error("Este talle se encuentra agotado.");
+      return;
+    }
 
-    return `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+    // Agregamos a Zustand (esto también abrirá el Sidebar automáticamente)
+    addItem({
+      camisetaId: camiseta.id,
+      equipo: camiseta.equipo,
+      temporada: camiseta.temporada,
+      tipo: camiseta.tipo,
+      talle: talleSeleccionado,
+      precio: camiseta.precio,
+      cantidad: 1, // Por defecto sumamos 1
+      imagenUrl: imagenes[0] || null,
+      stockMaximo: stockMaximo,
+    });
   };
 
   return (
@@ -122,19 +129,19 @@ export function ProductDetail({
               </div>
             )}
 
-            {/* Flechas de Navegación (Solo si hay más de 1 imagen) */}
+            {/* Flechas de Navegación */}
             {imagenes.length > 1 && (
               <>
                 <button
                   onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
                   aria-label="Imagen anterior"
                 >
                   <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
                   aria-label="Siguiente imagen"
                 >
                   <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
@@ -150,7 +157,7 @@ export function ProductDetail({
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 bg-[#f7f7f7] transition-all border-2 ${
+                  className={`relative w-20 h-24 sm:w-24 sm:h-28 shrink-0 bg-[#f7f7f7] transition-all border-2 cursor-pointer ${
                     currentImageIndex === index
                       ? "border-foreground opacity-100"
                       : "border-transparent opacity-60 hover:opacity-100 hover:border-border"
@@ -198,7 +205,7 @@ export function ProductDetail({
 
           <div className="w-full h-px bg-border/60 mb-8"></div>
 
-          {/* Selector de Talles Flat Design */}
+          {/* Selector de Talles */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
@@ -231,7 +238,7 @@ export function ProductDetail({
                         isSelected
                           ? "border-foreground bg-foreground text-background cursor-pointer"
                           : tieneStock
-                            ? "border-border bg-transparent text-foreground hover:border-foreground/40"
+                            ? "border-border bg-transparent text-foreground hover:border-foreground/40 cursor-pointer"
                             : "border-border/40 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through"
                       }
                     `}
@@ -253,33 +260,26 @@ export function ProductDetail({
 
           {/* Call To Action Flat */}
           <div className="mt-4">
-            <a
-              href={generarLinkWhatsApp()}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={handleWhatsAppClick}
+            <button
+              onClick={handleAddToCart}
+              disabled={estaAgotado}
               className={`
-                w-full flex items-center justify-center gap-3 py-4 px-6 rounded-none font-bold text-sm uppercase tracking-widest transition-colors
+                w-full flex items-center justify-center gap-3 py-4 px-6 rounded-none font-bold text-sm uppercase tracking-widest transition-colors cursor-pointer
                 ${
                   estaAgotado
                     ? "bg-muted text-muted-foreground cursor-not-allowed border border-border"
-                    : "bg-[#25D366] hover:bg-[#1EBE57] text-white"
+                    : "bg-foreground hover:bg-foreground/90 text-background"
                 }
               `}
             >
-              <Image
-                src="/whatsappp.png"
-                alt="WhatsApp"
-                width={20}
-                height={20}
-              />
-              {estaAgotado ? "Agotado" : "Consultar Disponibilidad"}
-            </a>
+              <ShoppingCart className="w-5 h-5" />
+              {estaAgotado ? "Agotado" : "Añadir al carrito"}
+            </button>
 
             {!estaAgotado && (
               <p className="text-center text-[11px] uppercase tracking-wide font-medium text-muted-foreground mt-4 leading-relaxed">
-                El pago y envío se coordinan <br /> de forma segura por
-                WhatsApp.
+                El pago y envío se coordinan <br /> de forma segura por WhatsApp
+                al finalizar.
               </p>
             )}
           </div>
