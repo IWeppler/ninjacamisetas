@@ -21,7 +21,7 @@ interface AnularVentaModalProps {
   id: string;
   productoNombre: string;
   cantidad: number;
-  talle: string;
+  variante: string;
   isProductoEliminado: boolean;
 }
 
@@ -29,7 +29,7 @@ export function AnularVentaModal({
   id,
   productoNombre,
   cantidad,
-  talle,
+  variante,
   isProductoEliminado,
 }: Readonly<AnularVentaModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +45,7 @@ export function AnularVentaModal({
           toast.success("Venta anulada correctamente. (Stock no restaurado)");
         } else {
           toast.success(
-            `Venta anulada. Se han devuelto ${cantidad} unidad(es) de talle ${talle} al stock.`,
+            `Venta anulada. Se han devuelto ${cantidad} unidad(es) de talle ${variante} al stock.`,
           );
         }
       } else if (result.error) {
@@ -75,7 +75,7 @@ export function AnularVentaModal({
             <p>
               Estás a punto de anular la venta de{" "}
               <span className="font-bold">
-                {cantidad}x {productoNombre} (Talle {talle})
+                {cantidad}x {productoNombre} (Talle {variante})
               </span>
               .
             </p>

@@ -1,20 +1,20 @@
-import { getPublicCatalogAction } from "@/features/store/actions/store-actions";
+import { getProductosAction } from "@/features/store/actions/store-actions";
 import { StoreCatalog } from "@/features/store/components/store-catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function StorePage() {
-  const { data: camisetas, error } = await getPublicCatalogAction();
+  const { data: productos, error } = await getProductosAction();
 
   return (
     <div className="min-h-screen bg-[#fffefe] flex flex-col">
       {/* CONTENIDO PRINCIPAL */}
-      <main className="flex-1 mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 w-full">
-        <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+      <main className="flex-1 mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div className="mb-6 text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight">
             Catálogo Oficial
           </h1>
-          <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
+          <p className="text-md text-muted-foreground max-w-2xl">
             Encontrá la camiseta de tu equipo. Stock limitado.
           </p>
         </div>
@@ -25,12 +25,9 @@ export default async function StorePage() {
             nuevamente más tarde.
           </div>
         ) : (
-          <StoreCatalog
-            camisetas={camisetas || []}
-          />
+          <StoreCatalog productos={productos || []} />
         )}
       </main>
-
     </div>
   );
 }

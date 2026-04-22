@@ -24,7 +24,7 @@ export function LoginForm() {
             name="email"
             type="email"
             required
-            placeholder="primo@ejemplo.com"
+            placeholder="correo@ejemplo.com"
           />
         </div>
 

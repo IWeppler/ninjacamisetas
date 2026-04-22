@@ -2,25 +2,18 @@
 
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
-import { Camiseta } from "@/entities/camisetas/types";
+import { Producto } from "@/entities/productos/types";
 
-// 1. Acción para obtener todo el catálogo (Vista de grilla)
-export async function getPublicCatalogAction() {
+export async function getProductosAction() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  // Solo traemos camisetas publicadas.
-  // IMPORTANTE: También traemos el stock para calcular si está "Agotado"
   const { data, error } = await supabase
-    .from("camisetas")
+    .from("productos")
     .select(
       `
       *,
-      stock:camisetas_stock(
-        id,
-        talle,
-        cantidad
-      )
+      stock:productos_stock(id, variante, cantidad)
     `,
     )
     .eq("publicado", true)
@@ -31,24 +24,20 @@ export async function getPublicCatalogAction() {
     return { data: null, error: "No se pudo cargar el catálogo." };
   }
 
-  return { data: data as Camiseta[], error: null };
+  return { data: data as Producto[], error: null };
 }
 
-// 2. NUEVA ACCIÓN: Obtener una sola camiseta usando su URL amigable (slug)
-export async function getCamisetaBySlugAction(slug: string) {
+// 2. Obtener un producto usando su URL amigable (slug)
+export async function getProductoBySlugAction(slug: string) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   const { data, error } = await supabase
-    .from("camisetas")
+    .from("productos")
     .select(
       `
       *,
-      stock:camisetas_stock(
-        id,
-        talle,
-        cantidad
-      )
+      stock:productos_stock(id, variante, cantidad)
     `,
     )
     .eq("slug", slug)
@@ -56,9 +45,9 @@ export async function getCamisetaBySlugAction(slug: string) {
     .single();
 
   if (error) {
-    console.error(`Error fetching camiseta by slug (${slug}):`, error);
-    return { data: null, error: "No se encontró la camiseta solicitada." };
+    console.error(`Error fetching producto by slug (${slug}):`, error);
+    return { data: null, error: "No se encontró el producto solicitado." };
   }
 
-  return { data: data as Camiseta, error: null };
+  return { data: data as Producto, error: null };
 }

@@ -12,7 +12,7 @@ export async function anularVentaAction(ventaId: string) {
     // 1. Obtener detalles de la venta antes de borrarla
     const { data: venta, error: fetchError } = await supabase
       .from("ventas")
-      .select("camiseta_id, talle, cantidad")
+      .select("producto_id, variante, cantidad")
       .eq("id", ventaId)
       .single();
 
@@ -32,23 +32,23 @@ export async function anularVentaAction(ventaId: string) {
     }
 
     // 3. Restaurar stock (Solo si el producto original aún existe)
-    if (venta.camiseta_id) {
+    if (venta.producto_id) {
       const { data: stockActual } = await supabase
-        .from("camisetas_stock")
+        .from("productos_stock")
         .select("id, cantidad")
-        .eq("camiseta_id", venta.camiseta_id)
-        .eq("talle", venta.talle)
+        .eq("producto_id", venta.producto_id)
+        .eq("variante", venta.variante)
         .single();
 
       if (stockActual) {
         await supabase
-          .from("camisetas_stock")
+          .from("productos_stock")
           .update({ cantidad: stockActual.cantidad + venta.cantidad })
           .eq("id", stockActual.id);
       } else {
-        await supabase.from("camisetas_stock").insert({
-          camiseta_id: venta.camiseta_id,
-          talle: venta.talle,
+        await supabase.from("productos_stock").insert({
+          producto_id: venta.producto_id,
+          variante: venta.variante,
           cantidad: venta.cantidad,
         });
       }

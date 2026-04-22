@@ -1,5 +1,5 @@
 import { Venta } from "@/entities/ventas/types";
-import { Camiseta } from "@/entities/camisetas/types";
+import { Producto } from "@/entities/productos/types";
 
 export type PeriodoDashboard =
   | "mes"
@@ -10,7 +10,7 @@ export type PeriodoDashboard =
 
 export function getDashboardMetrics(
   ventas: Venta[],
-  camisetas: Camiseta[],
+  productos: Producto[],
   periodo: PeriodoDashboard = "mes",
 ) {
   const now = new Date();
@@ -68,11 +68,11 @@ export function getDashboardMetrics(
   let stockValorizadoCosto = 0;
   let productosCriticos = 0;
 
-  camisetas.forEach((cam) => {
-    const costo = Number(cam.precio_costo ?? 0);
+  productos.forEach((pro) => {
+    const costo = Number(pro.precio_costo ?? 0);
 
     // 3. Stock Crítico Evaluado POR TALLE
-    cam.stock?.forEach((s) => {
+    pro.stock?.forEach((s) => {
       const cantidadStock = Number(s.cantidad);
       stockTotalUnidades += cantidadStock;
       stockValorizadoCosto += cantidadStock * costo;
@@ -86,7 +86,7 @@ export function getDashboardMetrics(
   // --- INTELIGENCIA ---
   const ventasPorProducto = ventasFiltradas.reduce(
     (acc, v) => {
-      const id = v.camiseta_id || "eliminado";
+      const id = v.producto_id || "eliminado";
       const total = Number(v.total);
       const cantidad = Number(v.cantidad);
       const precio = Number(v.precio_unitario);
@@ -94,8 +94,8 @@ export function getDashboardMetrics(
 
       if (!acc[id]) {
         acc[id] = {
-          nombre: v.camiseta
-            ? `${v.camiseta.equipo} (${v.camiseta.temporada})`
+          nombre: v.producto
+            ? `${v.producto.nombre} (${v.producto.temporada})`
             : "Producto Eliminado",
           ingresos: 0,
           unidades: 0,

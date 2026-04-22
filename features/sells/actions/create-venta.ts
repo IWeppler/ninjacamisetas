@@ -15,8 +15,8 @@ export async function registrarVentaAction(
   }
 
   const items = JSON.parse(cartData) as {
-    camisetaId: string;
-    talle: string;
+    productoId: string;
+    variante: string;
     cantidad: number;
     precioUnitario: number;
   }[];
@@ -38,28 +38,28 @@ export async function registrarVentaAction(
   for (const item of items) {
     // Usamos la relación para traer el stock Y el precio_costo actual de la camiseta en una sola consulta
     const { data: stockActual, error: stockError } = await supabase
-      .from("camisetas_stock")
-      .select("cantidad, id, camiseta:camisetas(precio_costo)")
-      .eq("camiseta_id", item.camisetaId)
-      .eq("talle", item.talle)
+      .from("productos_stock")
+      .select("cantidad, id, producto:productos(precio_costo)")
+      .eq("producto_id", item.productoId)
+      .eq("variante", item.variante)
       .single();
 
     if (stockError || !stockActual) {
       return {
-        error: `No se encontró stock registrado para el talle ${item.talle}.`,
+        error: `No se encontró stock registrado para el talle ${item.variante}.`,
         success: false,
       };
     }
 
     if (stockActual.cantidad < item.cantidad) {
       return {
-        error: `Stock insuficiente en talle ${item.talle}. Solo quedan ${stockActual.cantidad} unidades.`,
+        error: `Stock insuficiente en talle ${item.variante}. Solo quedan ${stockActual.cantidad} unidades.`,
         success: false,
       };
     }
 
     // Extraemos el costo de forma segura
-    const precioCostoReal = (stockActual.camiseta as any)?.precio_costo || 0;
+    const precioCostoReal = (stockActual.producto as any)?.precio_costo || 0;
 
     itemsProcesados.push({
       ...item,
@@ -73,11 +73,11 @@ export async function registrarVentaAction(
   for (const item of itemsProcesados) {
     // A) Registramos la venta en el historial congelando AMBOS precios (venta y costo)
     const { error: ventaError } = await supabase.from("ventas").insert({
-      camiseta_id: item.camisetaId,
-      talle: item.talle,
+      producto_id: item.productoId,
+      variante: item.variante,
       cantidad: item.cantidad,
       precio_unitario: item.precioUnitario,
-      precio_costo: item.precioCosto, // ¡Guardamos el costo para proteger las métricas de BI!
+      precio_costo: item.precioCosto,
     });
 
     if (ventaError) {
@@ -89,7 +89,7 @@ export async function registrarVentaAction(
     }
 
     const { error: updateError } = await supabase
-      .from("camisetas_stock")
+      .from("productos_stock")
       .update({ cantidad: item.stockOriginal - item.cantidad })
       .eq("id", item.stockId);
 

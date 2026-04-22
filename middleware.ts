@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // Creamos una respuesta inicial que iremos modificando si cambian las cookies
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -16,12 +15,9 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        // Actualizamos las cookies en la petición actual
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
-
-        // Actualizamos la respuesta para que el navegador guarde las nuevas cookies
         supabaseResponse = NextResponse.next({
           request,
         });
@@ -32,18 +28,24 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Obtenemos el usuario actual de forma segura
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
-  // Identificamos los tipos de ruta
   const isAuthRoute = pathname.startsWith("/auth");
-
-  // 💡 Aquí definimos cuáles son las rutas públicas de tu tienda
   const isPublicRoute = pathname.startsWith("/store");
+
+  if (pathname === "/") {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/store";
+      return NextResponse.redirect(url);
+    }
+    // Si eres tú (admin logueado), te deja pasar al Dashboard ("/")
+    return supabaseResponse;
+  }
 
   // 1. Si NO hay usuario, y NO es ruta de Auth, y NO es ruta Pública -> Redirigir al Login
   if (!user && !isAuthRoute && !isPublicRoute) {
@@ -59,20 +61,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3. En cualquier otro caso (ruta pública, o usuario logueado en ruta privada), dejamos pasar
   return supabaseResponse;
 }
 
-// Configuración de rutas donde se ejecutará el middleware
 export const config = {
   matcher: [
-    /*
-     * Ignora las rutas internas de Next.js y archivos estáticos:
-     * - _next/static (archivos estáticos)
-     * - _next/image (imágenes optimizadas)
-     * - favicon.ico (ícono)
-     * - extensiones de imágenes comunes (svg, png, jpg, etc.)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

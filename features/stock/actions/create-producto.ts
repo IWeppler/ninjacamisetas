@@ -3,12 +3,14 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { TALLE_OPTIONS } from "@/entities/productos/constants";
+import { slugify } from "@/shared/utils/sluglify";
 
-export async function crearCamisetaAction(
+export async function crearProductoAction(
   prevState: { error: string | null; success: boolean },
   formData: FormData,
 ) {
-  const equipo = formData.get("equipo") as string;
+  const nombre = formData.get("nombre") as string;
   const temporada = formData.get("temporada") as string;
   const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
@@ -19,7 +21,7 @@ export async function crearCamisetaAction(
   const archivos = formData.getAll("imagenes") as File[];
 
   if (
-    !equipo ||
+    !nombre ||
     !temporada ||
     !tipo ||
     Number.isNaN(precio) ||
@@ -45,56 +47,61 @@ export async function crearCamisetaAction(
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("camisetas")
+        .from("productos")
         .upload(fileName, file);
 
       if (!uploadError) {
         const {
           data: { publicUrl },
-        } = supabase.storage.from("camisetas").getPublicUrl(fileName);
+        } = supabase.storage.from("productos").getPublicUrl(fileName);
         urls.push(publicUrl);
       } else {
         console.error("Error subiendo archivo:", uploadError);
       }
     }
 
-    // Guardamos el array de URLs como un JSON string para soportar múltiples fotos
     if (urls.length > 0) {
       imagen_url = JSON.stringify(urls);
     }
   }
 
-  // 2. Insertamos la camiseta en la tabla principal
-  const { data: nuevaCamiseta, error: errorCamiseta } = await supabase
-    .from("camisetas")
+  // 2. Generamos el Slug amigable para la URL de la tienda
+  let slug = slugify(`${nombre}-${tipo}-${temporada}`);
+  const sufijo = Math.random().toString(36).substring(2, 6);
+  slug = `${slug}-${sufijo}`;
+
+  // 3. Insertamos el producto en la tabla principal
+  const { data: nuevoProducto, error: errorProducto } = await supabase
+    .from("productos")
     .insert({
-      equipo,
+      nombre,
       temporada,
       tipo,
       precio,
       precio_costo,
       imagen_url,
+      slug,
+      publicado: true,
     })
     .select("id")
     .single();
 
-  if (errorCamiseta || !nuevaCamiseta) {
-    console.error(errorCamiseta);
+  if (errorProducto || !nuevoProducto) {
+    console.error(errorProducto);
     return {
-      error: "Hubo un error al crear la camiseta base.",
+      error: "Hubo un error al crear el producto base.",
       success: false,
     };
   }
 
-  // 3. Preparamos el stock por talle
-  const tallesPosibles = ["S", "M", "L", "XL", "XXL"];
-  const stockParaInsertar = tallesPosibles
-    .map((talle) => {
-      const cantidadStr = formData.get(`stock_${talle}`) as string;
+  // 4. Preparamos el stock por talle
+  const stockParaInsertar = TALLE_OPTIONS.filter((opt) => opt.value !== "todos")
+    .map((opt) => {
+      const cantidadStr = formData.get(`stock_${opt.value}`) as string;
       const cantidad = Number.parseInt(cantidadStr, 10);
       return {
-        camiseta_id: nuevaCamiseta.id,
-        talle,
+        producto_id: nuevoProducto.id,
+        variante: opt.value,
         cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
       };
     })
@@ -102,20 +109,21 @@ export async function crearCamisetaAction(
 
   if (stockParaInsertar.length > 0) {
     const { error: errorStock } = await supabase
-      .from("camisetas_stock")
+      .from("productos_stock")
       .insert(stockParaInsertar);
 
     if (errorStock) {
       console.error(errorStock);
       return {
         error:
-          "Camiseta creada, pero hubo un error al guardar las cantidades de stock.",
+          "Producto creado, pero hubo un error al guardar las cantidades de stock.",
         success: false,
       };
     }
   }
 
   revalidatePath("/stock");
+  revalidatePath("/store");
 
   return { error: null, success: true };
 }

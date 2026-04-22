@@ -3,22 +3,25 @@
 import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { TALLE_OPTIONS } from "@/entities/productos/constants";
+import { slugify } from "@/shared/utils/sluglify";
 
-type UpdateCamisetaData = {
-  equipo: string;
+type UpdateProductoData = {
+  nombre: string;
   temporada: string;
   tipo: string;
   precio: number;
   precio_costo: number;
+  slug: string;
   imagen_url?: string;
 };
 
-export async function editarCamisetaAction(
+export async function editarProductoAction(
   prevState: { error: string | null; success: boolean },
   formData: FormData,
 ) {
   const id = formData.get("id") as string;
-  const equipo = formData.get("equipo") as string;
+  const nombre = formData.get("nombre") as string;
   const temporada = formData.get("temporada") as string;
   const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
@@ -29,7 +32,7 @@ export async function editarCamisetaAction(
 
   if (
     !id ||
-    !equipo ||
+    !nombre ||
     !temporada ||
     !tipo ||
     Number.isNaN(precio) ||
@@ -54,13 +57,13 @@ export async function editarCamisetaAction(
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("camisetas")
+        .from("productos")
         .upload(fileName, file);
 
       if (!uploadError) {
         const {
           data: { publicUrl },
-        } = supabase.storage.from("camisetas").getPublicUrl(fileName);
+        } = supabase.storage.from("productos").getPublicUrl(fileName);
         urls.push(publicUrl);
       }
     }
@@ -70,58 +73,66 @@ export async function editarCamisetaAction(
     }
   }
 
-  // 2. Preparamos los datos a actualizar (Ahora tipado y con precio_costo incluido)
-  const updateData: UpdateCamisetaData = {
-    equipo,
+  // 1. Generamos el nuevo Slug
+  let slug = slugify(`${nombre}-${tipo}-${temporada}`);
+  const sufijo = Math.random().toString(36).substring(2, 6);
+  slug = `${slug}-${sufijo}`;
+
+  // 2. Preparamos los datos a actualizar
+  const updateData: UpdateProductoData = {
+    nombre,
     temporada,
     tipo,
     precio,
     precio_costo,
+    slug,
   };
 
   if (imagen_url !== undefined) {
     updateData.imagen_url = imagen_url;
   }
 
-  // 3. Actualizamos la camiseta base
-  const { error: errorCamiseta } = await supabase
-    .from("camisetas")
+  // 3. Actualizamos el producto base
+  const { error: errorProducto } = await supabase
+    .from("productos")
     .update(updateData)
     .eq("id", id);
 
-  if (errorCamiseta) {
-    console.error(errorCamiseta);
+  if (errorProducto) {
+    console.error(errorProducto);
     return {
-      error: "Hubo un error al actualizar la camiseta.",
+      error: "Hubo un error al actualizar el producto.",
       success: false,
     };
   }
 
-  // 4. Actualizamos el stock
-  const tallesPosibles = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
-  const stockParaUpsert = tallesPosibles.map((talle) => {
-    const cantidadStr = formData.get(`stock_${talle.toLowerCase()}`) as string;
+  // 4. Actualizamos el stock (Arreglado el bug del Object)
+  const stockParaUpsert = TALLE_OPTIONS.filter(
+    (opt) => opt.value !== "todos",
+  ).map((opt) => {
+    const cantidadStr = formData.get(`stock_${opt.value}`) as string;
     const cantidad = Number.parseInt(cantidadStr, 10);
     return {
-      camiseta_id: id,
-      talle,
+      producto_id: id,
+      variante: opt.value,
       cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
     };
   });
 
   const { error: errorStock } = await supabase
-    .from("camisetas_stock")
-    .upsert(stockParaUpsert, { onConflict: "camiseta_id, talle" });
+    .from("productos_stock")
+    .upsert(stockParaUpsert, { onConflict: "producto_id, variante" });
 
   if (errorStock) {
     console.error(errorStock);
     return {
-      error: "Camiseta actualizada, pero hubo un error con el stock.",
+      error: "Producto actualizado, pero hubo un error con el stock.",
       success: false,
     };
   }
 
   revalidatePath("/stock");
+  revalidatePath("/store");
 
   return { error: null, success: true };
 }

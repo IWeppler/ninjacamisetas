@@ -1,12 +1,12 @@
-export interface CamisetaStock {
+export interface ProductoStock {
   id: string;
-  talle: string;
+  variante: string;
   cantidad: number;
 }
 
-export interface Camiseta {
+export interface Producto {
   id: string;
-  equipo: string;
+  nombre: string;
   temporada: string;
   tipo: string;
   precio: number;
@@ -15,5 +15,5 @@ export interface Camiseta {
   creado_en: string;
   publicado: boolean;
   slug: string | null;
-  stock?: CamisetaStock[];
+  stock?: ProductoStock[];
 }

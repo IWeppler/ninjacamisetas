@@ -10,7 +10,7 @@ export async function togglePublicadoAction(id: string, publicado: boolean) {
     const supabase = createClient(cookieStore);
 
     const { error } = await supabase
-      .from('camisetas')
+      .from('productos')
       .update({ publicado })
       .eq('id', id);
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { Camiseta } from "@/entities/camisetas/types";
 import {
   Table,
   TableBody,
@@ -11,12 +10,13 @@ import {
 } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
 import { Image as ImageIcon } from "lucide-react";
-import { EditarCamisetaModal } from "./editar-modal";
-import { EliminarCamisetaModal } from "./eliminar-modal";
+import { EditarProductoModal } from "./edit-modal";
+import { EliminarProductoModal } from "./delete-modal";
 import { TogglePublicado } from "./toggle-publicado";
+import { Producto } from "@/entities/productos/types";
 
 interface StockTableProps {
-  camisetas: Camiseta[];
+  productos: Producto[];
 }
 
 const formatearMoneda = (monto: number) => {
@@ -27,12 +27,12 @@ const formatearMoneda = (monto: number) => {
   }).format(monto);
 };
 
-export function StockTable({ camisetas }: Readonly<StockTableProps>) {
-  if (camisetas.length === 0) {
+export function StockTable({ productos }: Readonly<StockTableProps>) {
+  if (productos.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg border border-border">
         <p className="text-muted-foreground">
-          No hay camisetas en el inventario.
+          No hay productos en el inventario.
         </p>
       </div>
     );
@@ -55,41 +55,41 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {camisetas.map((camiseta) => {
+          {productos.map((producto) => {
             let primeraImagen = null;
             if (
-              Array.isArray(camiseta.imagen_url) &&
-              camiseta.imagen_url.length > 0
+              Array.isArray(producto.imagen_url) &&
+              producto.imagen_url.length > 0
             ) {
-              primeraImagen = camiseta.imagen_url[0];
-            } else if (typeof camiseta.imagen_url === "string") {
-              if (camiseta.imagen_url.startsWith("[")) {
+              primeraImagen = producto.imagen_url[0];
+            } else if (typeof producto.imagen_url === "string") {
+              if (producto.imagen_url.startsWith("[")) {
                 try {
-                  const parsed = JSON.parse(camiseta.imagen_url);
+                  const parsed = JSON.parse(producto.imagen_url);
                   primeraImagen = Array.isArray(parsed)
                     ? parsed[0]
-                    : camiseta.imagen_url;
+                    : producto.imagen_url;
                 } catch {
-                  primeraImagen = camiseta.imagen_url;
+                  primeraImagen = producto.imagen_url;
                 }
               } else {
-                primeraImagen = camiseta.imagen_url;
+                primeraImagen = producto.imagen_url;
               }
             }
 
             // Calculamos la ganancia unitaria estimada (Venta - Costo) de forma tipada
-            const precioCosto = camiseta.precio_costo || 0;
-            const margenEstiado = camiseta.precio - precioCosto;
+            const precioCosto = producto.precio_costo || 0;
+            const margenEstiado = producto.precio - precioCosto;
 
             return (
-              <TableRow key={camiseta.id}>
+              <TableRow key={producto.id}>
                 <TableCell>
                   <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden border border-border">
                     {primeraImagen ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={primeraImagen}
-                        alt={camiseta.equipo}
+                        alt={producto.nombre}
                         className="object-cover w-full h-full"
                       />
                     ) : (
@@ -98,26 +98,26 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
                   </div>
                 </TableCell>
                 <TableCell className="font-medium text-card-foreground">
-                  {camiseta.equipo}
+                  {producto.nombre}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {camiseta.temporada}
+                  {producto.temporada}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="font-normal">
-                    {camiseta.tipo}
+                    {producto.tipo}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {camiseta.stock && camiseta.stock.length > 0 ? (
-                      camiseta.stock.map((s) => (
+                    {producto.stock && producto.stock.length > 0 ? (
+                      producto.stock.map((s) => (
                         <Badge
                           key={s.id}
                           variant={s.cantidad > 0 ? "outline" : "destructive"}
                           className="text-xs"
                         >
-                          {s.talle}: {s.cantidad}
+                          {s.variante}: {s.cantidad}
                         </Badge>
                       ))
                     ) : (
@@ -130,8 +130,8 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
 
                 <TableCell className="text-center">
                   <TogglePublicado
-                    id={camiseta.id}
-                    publicadoInicial={camiseta.publicado ?? true}
+                    id={producto.id}
+                    publicadoInicial={producto.publicado ?? true}
                   />
                 </TableCell>
 
@@ -142,16 +142,16 @@ export function StockTable({ camisetas }: Readonly<StockTableProps>) {
                   className="text-right font-medium"
                   title={`Ganancia estimada: ${formatearMoneda(margenEstiado)}`}
                 >
-                  {formatearMoneda(camiseta.precio)}
+                  {formatearMoneda(producto.precio)}
                 </TableCell>
 
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <EditarCamisetaModal camiseta={camiseta} />
-                    <EliminarCamisetaModal
-                      id={camiseta.id}
-                      equipo={camiseta.equipo}
-                      temporada={camiseta.temporada}
+                    <EditarProductoModal producto={producto} />
+                    <EliminarProductoModal
+                      id={producto.id}
+                      nombre={producto.nombre}
+                      temporada={producto.temporada}
                     />
                   </div>
                 </TableCell>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { eliminarCamisetaAction } from "../actions/eliminar-camiseta";
+import { eliminarProductoAction } from "../actions/delete-producto";
 import { toast } from "sonner";
 
 import {
@@ -17,28 +17,28 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Trash2 } from "lucide-react";
 
-interface EliminarCamisetaModalProps {
+interface EliminarProductoModalProps {
   id: string;
-  equipo: string;
+  nombre: string;
   temporada: string;
 }
 
-export function EliminarCamisetaModal({
+export function EliminarProductoModal({
   id,
-  equipo,
+  nombre,
   temporada,
-}: Readonly<EliminarCamisetaModalProps>) {
+}: Readonly<EliminarProductoModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
   const handleEliminar = () => {
     startTransition(async () => {
-      const result = await eliminarCamisetaAction(id);
+      const result = await eliminarProductoAction(id);
 
       if (result.success) {
         setIsOpen(false);
-        toast.success(`La camiseta de ${equipo} ha sido eliminada`);
+        toast.success(`El producto ${nombre} ha sido eliminado`);
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -51,8 +51,8 @@ export function EliminarCamisetaModal({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          title="Eliminar camiseta"
+          className="h-8 w-8 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          title="Eliminar producto"
         >
           <Trash2 className="h-4 w-4" />
           <span className="sr-only">Eliminar</span>
@@ -63,13 +63,11 @@ export function EliminarCamisetaModal({
         <AlertDialogHeader>
           <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
           <AlertDialogDescription>
-            Estás a punto de eliminar la camiseta{" "}
-            <span className="font-bold">
-              {equipo} ({temporada})
-            </span>
-            . Esta acción borrará también todo su stock actual de forma
-            permanente. El historial de ventas de esta camiseta se conservará,
-            pero aparecerá como &quot;Producto eliminado&quot;.
+            Estás a punto de eliminar el producto{" "}
+            <span className="font-bold">{nombre}</span>. Esta acción borrará
+            también todo su stock actual de forma permanente. El historial de
+            ventas de este producto se conservará, pero aparecerá como
+            &quot;Producto eliminado&quot;.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -81,7 +79,7 @@ export function EliminarCamisetaModal({
             onClick={handleEliminar}
             disabled={isPending}
           >
-            {isPending ? "Eliminando..." : "Sí, eliminar camiseta"}
+            {isPending ? "Eliminando..." : "Sí, eliminar producto"}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

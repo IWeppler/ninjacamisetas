@@ -1,7 +1,7 @@
 import { getVentasAction } from "@/features/sells/actions/get-venta";
-import { getCamisetasAction } from "@/features/stock/actions/stock";
+import { getStockAction } from "@/features/stock/actions/get-producto";
 import { RegistrarVentaModal } from "@/features/sells/ui/venta-modal";
-import { CrearCamisetaModal } from "@/features/stock/ui/stock-modal";
+import { CrearProductoModal } from "@/features/stock/ui/add-modal";
 import {
   getDashboardMetrics,
   PeriodoDashboard,
@@ -18,6 +18,8 @@ import {
   Percent,
   Tags,
 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 const formatearMoneda = (monto: number) => {
   return new Intl.NumberFormat("es-AR", {
@@ -39,16 +41,16 @@ export default async function DashboardPage({
   const periodoParam = (params.periodo as PeriodoDashboard) || "mes";
 
   // 2. Obtenemos toda la data directamente de la base de datos
-  const [ventasResponse, camisetasResponse] = await Promise.all([
+  const [ventasResponse, productosResponse] = await Promise.all([
     getVentasAction(),
-    getCamisetasAction(),
+    getStockAction(),
   ]);
 
   const ventas = ventasResponse.data || [];
-  const camisetas = camisetasResponse.data || [];
+  const productos = productosResponse.data || [];
 
   // 3. Extraemos la lógica compleja pasándole el período dinámico
-  const metrics = getDashboardMetrics(ventas, camisetas, periodoParam);
+  const metrics = getDashboardMetrics(ventas, productos, periodoParam);
 
   const periodoLabel =
     {
@@ -75,8 +77,8 @@ export default async function DashboardPage({
 
           <div className="hidden sm:block w-px h-8 bg-border/60 mx-1"></div>
 
-          <CrearCamisetaModal />
-          <RegistrarVentaModal camisetas={camisetas} />
+          <CrearProductoModal />
+          <RegistrarVentaModal productos={productos} />
         </div>
       </div>
 

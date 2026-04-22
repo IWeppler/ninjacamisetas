@@ -1,16 +1,18 @@
 import { getVentasAction } from "@/features/sells/actions/get-venta";
-import { getCamisetasAction } from "@/features/stock/actions/stock";
+import { getStockAction } from "@/features/stock/actions/get-producto";
 import { VentasTable } from "@/features/sells/ui/venta-table";
 
+export const dynamic = "force-dynamic";
+
 export default async function VentasPage() {
-  const [ventasResponse, camisetasResponse] = await Promise.all([
+  const [ventasResponse, productosResponse] = await Promise.all([
     getVentasAction(),
-    getCamisetasAction(),
+    getStockAction(),
   ]);
 
   const ventas = ventasResponse.data;
   const error = ventasResponse.error;
-  const camisetas = camisetasResponse.data;
+  const productos = productosResponse.data;
 
   return (
     <div className="space-y-6">
@@ -30,7 +32,7 @@ export default async function VentasPage() {
           {error}
         </div>
       ) : (
-        <VentasTable ventas={ventas || []} camisetas={camisetas || []} />
+        <VentasTable ventas={ventas || []} productos={productos || []} />
       )}
     </div>
   );

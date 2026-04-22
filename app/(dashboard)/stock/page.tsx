@@ -1,8 +1,10 @@
-import { getCamisetasAction } from "@/features/stock/actions/stock";
+import { getStockAction } from "@/features/stock/actions/get-producto";
 import { StockView } from "@/features/stock/ui/stock-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function StockPage() {
-  const { data: camisetas } = await getCamisetasAction();
+  const { data: productos } = await getStockAction();
 
   return (
     <div className="space-y-6">
@@ -16,7 +18,7 @@ export default async function StockPage() {
           </p>
         </div>
       </div>
-      <StockView camisetas={camisetas || []} />
+      <StockView productos={productos || []} />
     </div>
   );
 }

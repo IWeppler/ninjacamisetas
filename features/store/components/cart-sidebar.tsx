@@ -1,6 +1,6 @@
 "use client";
 
-import { useCartStore } from "@/features/store/store/useCartStore";
+import { useCartStore } from "@/features/store/store/cart-store";
 import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
@@ -34,8 +34,8 @@ export function CartSidebar({
       "¡Hola Ninja Camisetas! 🥷\nQuiero realizar el siguiente pedido:\n\n";
 
     items.forEach((item) => {
-      mensaje += `${item.cantidad}x ${item.equipo} (${item.temporada})\n`;
-      mensaje += ` └ Talle: ${item.talle} - $${(item.precio * item.cantidad).toLocaleString("es-AR")}\n`;
+      mensaje += `${item.cantidad}x ${item.nombre} (${item.temporada})\n`;
+      mensaje += ` └ Talle: ${item.variante} - $${(item.precio * item.cantidad).toLocaleString("es-AR")}\n`;
     });
 
     mensaje += `\n*TOTAL: $${getTotalPrice().toLocaleString("es-AR")}*\n\n¿Tienen stock disponible para confirmar?`;
@@ -99,11 +99,11 @@ export function CartSidebar({
           ) : (
             items.map((item) => (
               <div
-                key={`${item.camisetaId}-${item.talle}`}
+                key={`${item.productoId}-${item.variante}`}
                 className="flex gap-4 relative group"
               >
                 <button
-                  onClick={() => removeItem(item.camisetaId, item.talle)}
+                  onClick={() => removeItem(item.productoId, item.variante)}
                   className="absolute -left-2 -top-2 w-6 h-6 bg-white border border-border flex items-center justify-center text-muted-foreground hover:text-destructive hover:border-destructive transition-colors z-10 opacity-0 group-hover:opacity-100 cursor-pointer"
                   title="Eliminar producto"
                 >
@@ -115,7 +115,7 @@ export function CartSidebar({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.imagenUrl}
-                      alt={item.equipo}
+                      alt={item.nombre}
                       className="object-cover w-full h-full"
                     />
                   ) : (
@@ -126,10 +126,10 @@ export function CartSidebar({
                 <div className="flex flex-col flex-1 justify-between py-1">
                   <div>
                     <h3 className="font-bold text-sm uppercase tracking-wide leading-tight line-clamp-2">
-                      {item.equipo}
+                      {item.nombre}
                     </h3>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-                      {item.temporada} • Talle {item.talle}
+                      {item.temporada} • Talle {item.variante}
                     </p>
                   </div>
 
@@ -139,8 +139,8 @@ export function CartSidebar({
                       <button
                         onClick={() =>
                           updateQuantity(
-                            item.camisetaId,
-                            item.talle,
+                            item.productoId,
+                            item.variante,
                             item.cantidad - 1,
                           )
                         }
@@ -155,8 +155,8 @@ export function CartSidebar({
                       <button
                         onClick={() =>
                           updateQuantity(
-                            item.camisetaId,
-                            item.talle,
+                            item.productoId,
+                            item.variante,
                             item.cantidad + 1,
                           )
                         }

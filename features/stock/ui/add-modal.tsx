@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useActionState } from "react";
-import { editarCamisetaAction } from "../actions/editar-camiseta";
-import { Camiseta } from "@/entities/camisetas/types";
+import { crearProductoAction } from "../actions/create-producto";
 import { toast } from "sonner";
 
 import {
@@ -11,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -23,21 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Pencil, ImagePlus } from "lucide-react";
+import { Plus, ImagePlus } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import {
   TIPO_OPTIONS,
   TALLE_OPTIONS,
   TEMPORADA_OPTIONS,
-} from "@/entities/camisetas/constants";
+  getTemporadaActual,
+} from "@/entities/productos/constants";
 
-interface EditarCamisetaModalProps {
-  camiseta: Camiseta;
-}
-
-export function EditarCamisetaModal({
-  camiseta,
-}: Readonly<EditarCamisetaModalProps>) {
+export function CrearProductoModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [archivos, setArchivos] = useState<File[]>([]);
 
@@ -59,12 +52,12 @@ export function EditarCamisetaModal({
       prevState: { error: string | null; success: boolean },
       formData: FormData,
     ) => {
-      const result = await editarCamisetaAction(prevState, formData);
+      const result = await crearProductoAction(prevState, formData);
 
       if (result.success) {
         setIsOpen(false);
         setArchivos([]);
-        toast.success("Camiseta actualizada correctamente");
+        toast.success("Camiseta añadido al inventario con éxito");
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -73,72 +66,36 @@ export function EditarCamisetaModal({
     { error: null, success: false },
   );
 
-  // Procesamos las imágenes existentes en la base de datos
-  let imagenesExistentes: string[] = [];
-  if (Array.isArray(camiseta.imagen_url)) {
-    imagenesExistentes = camiseta.imagen_url;
-  } else if (typeof camiseta.imagen_url === "string") {
-    try {
-      const parsed = JSON.parse(camiseta.imagen_url);
-      imagenesExistentes = Array.isArray(parsed)
-        ? parsed
-        : [camiseta.imagen_url];
-    } catch {
-      imagenesExistentes = [camiseta.imagen_url];
-    }
-  }
-
-  // Función para obtener el stock actual de un talle específico
-  const getStockParaTalle = (talleBuscado: string) => {
-    // Normalizamos minúsculas por si acaso
-    const stockTalle = camiseta.stock?.find(
-      (s) => s.talle.toLowerCase() === talleBuscado.toLowerCase(),
-    );
-    return stockTalle ? stockTalle.cantidad : 0;
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors cursor-pointer"
-          title="Editar camiseta"
-        >
-          <Pencil className="h-4 w-4" />
-          <span className="sr-only">Editar</span>
+        <Button className="w-full sm:w-auto py-4">
+          <Plus className="mr-2 h-4 w-4" /> Nueva Camiseta
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Editar Camiseta</DialogTitle>
-          <DialogDescription className="sr-only">
-            Formulario para editar los detalles, precios, imágenes y stock de la
-            camiseta.
-          </DialogDescription>
+          <DialogTitle>Añadir Nueva Camiseta</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[80vh]">
           <form action={formAction} className="space-y-6 mt-4 px-1 pb-2">
-            <input type="hidden" name="id" value={camiseta.id} />
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="equipo">Equipo</Label>
                 <Input
                   id="equipo"
                   name="equipo"
-                  defaultValue={camiseta.equipo}
+                  placeholder="Ej. Boca Juniors"
                   required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="temporada">Temporada</Label>
-                <Select name="temporada" defaultValue={camiseta.temporada}>
+                <Select name="temporada" defaultValue={getTemporadaActual()}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona..." />
+                    <SelectValue placeholder="Selecciona temporada..." />
                   </SelectTrigger>
                   <SelectContent>
                     {TEMPORADA_OPTIONS.filter(
@@ -155,10 +112,7 @@ export function EditarCamisetaModal({
 
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <Select
-                name="tipo"
-                defaultValue={camiseta.tipo?.toLowerCase() || "local"}
-              >
+              <Select name="tipo" defaultValue="local">
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona..." />
                 </SelectTrigger>
@@ -183,7 +137,7 @@ export function EditarCamisetaModal({
                   type="number"
                   min="0"
                   step="100"
-                  defaultValue={camiseta.precio_costo || 0}
+                  placeholder="0"
                   required
                 />
               </div>
@@ -195,17 +149,19 @@ export function EditarCamisetaModal({
                   type="number"
                   min="0"
                   step="100"
-                  defaultValue={camiseta.precio}
+                  placeholder="0"
                   required
                 />
               </div>
             </div>
 
+            {/* Zona de Subida de Imágenes Mejorada */}
             <div className="space-y-3">
-              <Label>Reemplazar Imágenes (Opcional)</Label>
+              <Label>Imágenes del Producto</Label>
+
               <div className="flex flex-col items-center justify-center w-full">
                 <Label
-                  htmlFor={`imagenes-edit-${camiseta.id}`}
+                  htmlFor="imagenes"
                   className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/20 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
@@ -217,11 +173,12 @@ export function EditarCamisetaModal({
                       o arrastra tus fotos aquí
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Si subes nuevas fotos, reemplazarán a las actuales.
+                      Soporta PNG, JPG o WEBP. Puedes seleccionar múltiples
+                      archivos.
                     </p>
                   </div>
                   <Input
-                    id={`imagenes-edit-${camiseta.id}`}
+                    id="imagenes"
                     name="imagenes"
                     type="file"
                     multiple
@@ -232,41 +189,18 @@ export function EditarCamisetaModal({
                 </Label>
               </div>
 
+              {/* Previsualización de Thumbnails */}
               {archivos.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-3">
-                  <p className="w-full text-xs font-semibold text-blue-600 mb-1">
-                    Nuevas imágenes listas para subir:
-                  </p>
-                  {archivos.map((file) => (
+                  {archivos.map((file, index) => (
                     <div
-                      key={file.name}
-                      className="relative w-16 h-16 rounded-md overflow-hidden border-2 border-blue-500 bg-muted"
+                      key={index}
+                      className="relative w-16 h-16 rounded-md overflow-hidden border border-border bg-muted group"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={URL.createObjectURL(file)}
-                        alt={`Preview ${file.name}`}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {archivos.length === 0 && imagenesExistentes.length > 0 && (
-                <div className="flex flex-wrap gap-3 mt-3 opacity-80">
-                  <p className="w-full text-xs font-medium text-muted-foreground mb-1">
-                    Imágenes actuales en la tienda:
-                  </p>
-                  {imagenesExistentes.map((img, index) => (
-                    <div
-                      key={img}
-                      className="relative w-16 h-16 rounded-md overflow-hidden border border-border bg-muted"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img}
-                        alt={`Actual ${index}`}
+                        alt={`Preview ${index}`}
                         className="object-cover w-full h-full"
                       />
                     </div>
@@ -277,7 +211,7 @@ export function EditarCamisetaModal({
 
             <div className="border-t border-border pt-4">
               <h3 className="text-sm font-medium mb-3">
-                Actualizar Stock por Talle
+                Stock Inicial por Talle
               </h3>
               <div className="grid grid-cols-7 gap-2">
                 {TALLE_OPTIONS.filter((opt) => opt.value !== "todos").map(
@@ -287,17 +221,17 @@ export function EditarCamisetaModal({
                       className="flex flex-col items-center space-y-1"
                     >
                       <Label
-                        htmlFor={`stock_edit_${camiseta.id}_${opt.value}`}
-                        className="text-xs text-muted-foreground uppercase"
+                        htmlFor={`stock_${opt.value}`}
+                        className="text-xs text-muted-foreground"
                       >
                         {opt.label}
                       </Label>
                       <Input
-                        id={`stock_edit_${camiseta.id}_${opt.value}`}
-                        name={`stock_${opt.value.toLowerCase()}`}
+                        id={`stock_${opt.value}`}
+                        name={`stock_${opt.value}`}
                         type="number"
                         min="0"
-                        defaultValue={getStockParaTalle(opt.value)}
+                        placeholder="0"
                         className="text-center px-1"
                       />
                     </div>
@@ -307,7 +241,7 @@ export function EditarCamisetaModal({
             </div>
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Actualizando..." : "Guardar Cambios"}
+              {isPending ? "Guardando..." : "Guardar Producto"}
             </Button>
           </form>
         </ScrollArea>

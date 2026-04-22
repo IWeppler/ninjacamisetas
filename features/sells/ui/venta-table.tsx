@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Venta } from "@/entities/ventas/types";
-import { Camiseta } from "@/entities/camisetas/types";
+import { Producto } from "@/entities/productos/types";
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import { Button } from "@/shared/ui/button";
 
 interface VentasTableProps {
   ventas: Venta[];
-  camisetas: Camiseta[];
+  productos: Producto[];
 }
 
 const formatearFecha = (fechaString: string) => {
@@ -43,15 +43,14 @@ const formatearMoneda = (monto: number) => {
 
 export function VentasTable({
   ventas = [],
-  camisetas = [],
+  productos = [],
 }: Readonly<VentasTableProps>) {
-  const [filtroEquipo, setFiltroEquipo] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroTemporada, setFiltroTemporada] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [filtroTalle, setFiltroTalle] = useState("todos");
+  const [filtroVariante, setFiltroVariante] = useState("todos");
   const [orden, setOrden] = useState("recientes");
 
-  // Añadimos la opción de ordenar por "Mayor Ganancia"
   const ordenOptions = [
     { value: "recientes", label: "Más recientes" },
     { value: "antiguos", label: "Más antiguos" },
@@ -64,19 +63,19 @@ export function VentasTable({
   const ventasFiltradasYOrdenadas = useMemo(() => {
     // 1. Filtrar
     const resultado = ventas.filter((venta) => {
-      const equipo = venta.camiseta?.equipo?.toLowerCase() || "";
-      const temporada = venta.camiseta?.temporada?.toLowerCase() || "";
-      const tipo = venta.camiseta?.tipo?.toLowerCase() || "";
-      const talle = venta.talle?.toLowerCase() || "";
+      const nombre = venta.producto?.nombre?.toLowerCase() || "";
+      const temporada = venta.producto?.temporada?.toLowerCase() || "";
+      const tipo = venta.producto?.tipo?.toLowerCase() || "";
+      const variante = venta.variante?.toLowerCase() || "";
 
-      const matchEquipo = equipo.includes(filtroEquipo.toLowerCase());
+      const matchNombre = nombre.includes(filtroNombre.toLowerCase());
       const matchTemporada = temporada.includes(filtroTemporada.toLowerCase());
       const matchTipo =
         filtroTipo === "todos" || tipo === filtroTipo.toLowerCase();
-      const matchTalle =
-        filtroTalle === "todos" || talle === filtroTalle.toLowerCase();
+      const matchVariante =
+        filtroVariante === "todos" || variante === filtroVariante.toLowerCase();
 
-      return matchEquipo && matchTemporada && matchTipo && matchTalle;
+      return matchNombre && matchTemporada && matchTipo && matchVariante;
     });
 
     // 2. Ordenar
@@ -112,21 +111,28 @@ export function VentasTable({
     });
 
     return resultado;
-  }, [ventas, filtroEquipo, filtroTemporada, filtroTipo, filtroTalle, orden]);
+  }, [
+    ventas,
+    filtroNombre,
+    filtroTemporada,
+    filtroTipo,
+    filtroVariante,
+    orden,
+  ]);
 
   const limpiarFiltros = () => {
-    setFiltroEquipo("");
+    setFiltroNombre("");
     setFiltroTemporada("");
     setFiltroTipo("todos");
-    setFiltroTalle("todos");
+    setFiltroVariante("todos");
     setOrden("recientes");
   };
 
   const hayFiltrosActivos =
-    filtroEquipo !== "" ||
+    filtroNombre !== "" ||
     filtroTemporada !== "" ||
     filtroTipo !== "todos" ||
-    filtroTalle !== "todos" ||
+    filtroVariante !== "todos" ||
     orden !== "recientes";
 
   const actionButtons = (
@@ -137,7 +143,7 @@ export function VentasTable({
       >
         <Download className="mr-2 h-4 w-4" /> Exportar CSV
       </Button>
-      <RegistrarVentaModal camisetas={camisetas} />
+      <RegistrarVentaModal productos={productos} />
     </>
   );
 
@@ -145,15 +151,15 @@ export function VentasTable({
     return (
       <div className="space-y-4">
         <FilterToolbar
-          searchQuery={filtroEquipo}
-          onSearchChange={setFiltroEquipo}
+          searchQuery={filtroNombre}
+          onSearchChange={setFiltroNombre}
           searchPlaceholder="Buscar por equipo..."
           temporada={filtroTemporada}
           onTemporadaChange={setFiltroTemporada}
           tipo={filtroTipo}
           onTipoChange={setFiltroTipo}
-          talle={filtroTalle}
-          onTalleChange={setFiltroTalle}
+          variante={filtroVariante}
+          onVarianteChange={setFiltroVariante}
           orden={orden}
           onOrdenChange={setOrden}
           ordenOptions={ordenOptions}
@@ -177,15 +183,15 @@ export function VentasTable({
   return (
     <div className="space-y-4">
       <FilterToolbar
-        searchQuery={filtroEquipo}
-        onSearchChange={setFiltroEquipo}
+        searchQuery={filtroNombre}
+        onSearchChange={setFiltroNombre}
         searchPlaceholder="Buscar por equipo..."
         temporada={filtroTemporada}
         onTemporadaChange={setFiltroTemporada}
         tipo={filtroTipo}
         onTipoChange={setFiltroTipo}
-        talle={filtroTalle}
-        onTalleChange={setFiltroTalle}
+        variante={filtroVariante}
+        onVarianteChange={setFiltroVariante}
         orden={orden}
         onOrdenChange={setOrden}
         ordenOptions={ordenOptions}
@@ -214,7 +220,7 @@ export function VentasTable({
             {ventasFiltradasYOrdenadas.length > 0 ? (
               ventasFiltradasYOrdenadas.map((venta) => {
                 let primeraImagen = null;
-                const imagenUrl = venta.camiseta?.imagen_url;
+                const imagenUrl = venta.producto?.imagen_url;
 
                 if (Array.isArray(imagenUrl) && imagenUrl.length > 0) {
                   primeraImagen = imagenUrl[0];
@@ -233,10 +239,10 @@ export function VentasTable({
                   }
                 }
 
-                const isEliminado = !venta.camiseta;
+                const isEliminado = !venta.producto;
                 const nombreProducto = isEliminado
                   ? "Producto eliminado"
-                  : `${venta.camiseta?.equipo} (${venta.camiseta?.temporada})`;
+                  : `${venta.producto?.nombre} (${venta.producto?.temporada})`;
 
                 // Cálculo de ganancia
                 const costoUnitario = venta.precio_costo || 0;
@@ -251,7 +257,7 @@ export function VentasTable({
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={primeraImagen}
-                            alt="Camiseta"
+                            alt="Producto"
                             className="object-cover w-full h-full"
                           />
                         ) : (
@@ -267,9 +273,9 @@ export function VentasTable({
                         </span>
                       ) : (
                         <>
-                          <div>{venta.camiseta?.equipo}</div>
+                          <div>{venta.producto?.nombre}</div>
                           <div className="text-xs text-muted-foreground font-normal">
-                            {venta.camiseta?.temporada}
+                            {venta.producto?.temporada}
                           </div>
                         </>
                       )}
@@ -280,7 +286,7 @@ export function VentasTable({
                         variant="outline"
                         className="font-medium bg-muted/50"
                       >
-                        {venta.talle}
+                        {venta.variante}
                       </Badge>
                     </TableCell>
 
@@ -323,7 +329,7 @@ export function VentasTable({
                         id={venta.id}
                         productoNombre={nombreProducto}
                         cantidad={venta.cantidad}
-                        talle={venta.talle}
+                        variante={venta.variante}
                         isProductoEliminado={isEliminado}
                       />
                     </TableCell>

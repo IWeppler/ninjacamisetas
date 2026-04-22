@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Camiseta } from "@/entities/camisetas/types";
+import { Producto } from "@/entities/productos/types";
 import {
   ShoppingBag,
   ArrowLeft,
@@ -11,43 +11,40 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { TALLE_OPTIONS } from "@/entities/camisetas/constants";
-import { useCartStore } from "@/features/store/store/useCartStore";
+import { TALLE_OPTIONS } from "@/entities/productos/constants";
+import { useCartStore } from "@/features/store/store/cart-store";
 import { toast } from "sonner";
 
 interface ProductDetailProps {
-  camiseta: Camiseta;
+  producto: Producto;
+  baseUrl?: string;
 }
 
-export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
-  const [talleSeleccionado, setTalleSeleccionado] = useState<string | null>(
-    null,
-  );
-  const [errorTalle, setErrorTalle] = useState(false);
+export function ProductDetail({ producto }: Readonly<ProductDetailProps>) {
+  const [varianteSeleccionada, setVarianteSeleccionada] = useState<
+    string | null
+  >(null);
+  const [errorVariante, setErrorVariante] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Traemos la función para agregar al carrito desde Zustand
   const addItem = useCartStore((state) => state.addItem);
 
-  // --- Procesamiento de todas las imágenes ---
   let imagenes: string[] = [];
-  if (Array.isArray(camiseta.imagen_url)) {
-    imagenes = camiseta.imagen_url;
-  } else if (typeof camiseta.imagen_url === "string") {
+  if (Array.isArray(producto.imagen_url)) {
+    imagenes = producto.imagen_url;
+  } else if (typeof producto.imagen_url === "string") {
     try {
-      const parsed = JSON.parse(camiseta.imagen_url);
-      imagenes = Array.isArray(parsed) ? parsed : [camiseta.imagen_url];
+      const parsed = JSON.parse(producto.imagen_url);
+      imagenes = Array.isArray(parsed) ? parsed : [producto.imagen_url];
     } catch {
-      imagenes = [camiseta.imagen_url];
+      imagenes = [producto.imagen_url];
     }
   }
 
-  // Stock disponible
   const stockTotal =
-    camiseta.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0;
+    producto.stock?.reduce((acc, s) => acc + s.cantidad, 0) || 0;
   const estaAgotado = stockTotal === 0;
 
-  // --- Handlers de Galería ---
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
       prev === 0 ? imagenes.length - 1 : prev - 1,
@@ -60,44 +57,44 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
     );
   };
 
-  // --- NUEVO: Manejador del Carrito ---
   const handleAddToCart = () => {
     if (estaAgotado) return;
 
-    if (!talleSeleccionado) {
-      setErrorTalle(true);
+    if (!varianteSeleccionada) {
+      setErrorVariante(true);
       return;
     }
-    setErrorTalle(false);
+    setErrorVariante(false);
 
-    // Buscamos el stock máximo disponible para este talle exacto
-    const stockDeTalle = camiseta.stock?.find(
-      (s) => s.talle.toLowerCase() === talleSeleccionado.toLowerCase(),
+    const stockDeVariante = producto.stock?.find(
+      (s) =>
+        (s.variante || "").toLowerCase() === varianteSeleccionada.toLowerCase(),
     );
-    const stockMaximo = stockDeTalle ? stockDeTalle.cantidad : 0;
+    const stockMaximo = stockDeVariante ? stockDeVariante.cantidad : 0;
 
     if (stockMaximo <= 0) {
-      toast.error("Este talle se encuentra agotado.");
+      toast.error("Esta variante se encuentra agotada.");
       return;
     }
 
-    // Agregamos a Zustand (esto también abrirá el Sidebar automáticamente)
     addItem({
-      camisetaId: camiseta.id,
-      equipo: camiseta.equipo,
-      temporada: camiseta.temporada,
-      tipo: camiseta.tipo,
-      talle: talleSeleccionado,
-      precio: camiseta.precio,
-      cantidad: 1, // Por defecto sumamos 1
+      productoId: producto.id,
+      camisetaId: producto.id,
+      nombre: producto.nombre || "Sin nombre",
+      equipo: producto.nombre || "Sin equipo",
+      temporada: producto.temporada,
+      tipo: producto.tipo,
+      variante: varianteSeleccionada,
+      talle: varianteSeleccionada,
+      precio: producto.precio,
+      cantidad: 1,
       imagenUrl: imagenes[0] || null,
       stockMaximo: stockMaximo,
-    });
+    } as any);
   };
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Botón de volver ultra minimalista */}
       <div className="mb-8">
         <Link
           href="/store"
@@ -109,15 +106,13 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
       </div>
 
       <div className="flex flex-col md:flex-row gap-10 lg:gap-16 items-start">
-        {/* COLUMNA IZQUIERDA: Galería Interactiva */}
         <div className="w-full md:w-3/5 lg:w-2/3 flex flex-col gap-4">
-          {/* Imagen Principal */}
           <div className="relative aspect-4/4 bg-[#f7f7f7] w-full flex items-center justify-center group overflow-hidden border border-border/40">
             {imagenes.length > 0 ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imagenes[currentImageIndex]}
-                alt={`${camiseta.equipo} - Vista ${currentImageIndex + 1}`}
+                alt={`${producto.nombre} - Vista ${currentImageIndex + 1}`}
                 className="object-cover w-full h-full transition-opacity duration-300"
               />
             ) : (
@@ -129,20 +124,17 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
               </div>
             )}
 
-            {/* Flechas de Navegación */}
             {imagenes.length > 1 && (
               <>
                 <button
                   onClick={handlePrevImage}
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
-                  aria-label="Imagen anterior"
                 >
                   <ChevronLeft className="w-6 h-6" strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={handleNextImage}
                   className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white text-foreground flex items-center justify-center rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm border border-border/50 cursor-pointer"
-                  aria-label="Siguiente imagen"
                 >
                   <ChevronRight className="w-6 h-6" strokeWidth={1.5} />
                 </button>
@@ -150,7 +142,6 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
             )}
           </div>
 
-          {/* Miniaturas (Thumbnails) */}
           {imagenes.length > 1 && (
             <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
               {imagenes.map((img, index) => (
@@ -162,7 +153,6 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
                       ? "border-foreground opacity-100"
                       : "border-transparent opacity-60 hover:opacity-100 hover:border-border"
                   }`}
-                  aria-label={`Ver imagen ${index + 1}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -176,63 +166,61 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
           )}
         </div>
 
-        {/* COLUMNA DERECHA: Checkout Pegajoso (Sticky) */}
         <div className="w-full md:w-2/5 lg:w-1/3 flex flex-col sticky top-24">
-          {/* Encabezado del Producto */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                {camiseta.temporada}
+                {producto.temporada}
               </span>
-              {camiseta.tipo && (
+              {producto.tipo && (
                 <>
                   <span className="text-muted-foreground/30">•</span>
                   <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                    {camiseta.tipo}
+                    {producto.tipo}
                   </span>
                 </>
               )}
             </div>
 
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground uppercase tracking-tight leading-none mb-4">
-              {camiseta.equipo}
+              {producto.nombre || "Sin nombre"}
             </h1>
 
             <div className="text-xl font-medium text-foreground">
-              ${camiseta.precio.toLocaleString("es-AR")}
+              ${(producto.precio || 0).toLocaleString("es-AR")}
             </div>
           </div>
 
           <div className="w-full h-px bg-border/60 mb-8"></div>
 
-          {/* Selector de Talles */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Selecciona un talle
+                Selecciona una opción
               </h3>
             </div>
 
             <div className="grid grid-cols-4 gap-2">
-              {TALLE_OPTIONS.filter((o) => o.value !== "todos").map(
-                (talleOpt) => {
-                  const stockDeTalle = camiseta.stock?.find(
-                    (s) =>
-                      s.talle.toLowerCase() === talleOpt.value.toLowerCase(),
-                  );
-                  const tieneStock = stockDeTalle && stockDeTalle.cantidad > 0;
-                  const isSelected = talleSeleccionado === talleOpt.value;
+              {TALLE_OPTIONS.filter((o) => o.value !== "todos").map((opt) => {
+                const stockDeVariante = producto.stock?.find(
+                  (s) =>
+                    (s.variante || "").toLowerCase() ===
+                    opt.value.toLowerCase(),
+                );
+                const tieneStock =
+                  stockDeVariante && stockDeVariante.cantidad > 0;
+                const isSelected = varianteSeleccionada === opt.value;
 
-                  return (
-                    <button
-                      key={talleOpt.value}
-                      type="button"
-                      disabled={!tieneStock}
-                      onClick={() => {
-                        setTalleSeleccionado(talleOpt.value);
-                        setErrorTalle(false);
-                      }}
-                      className={`
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={!tieneStock}
+                    onClick={() => {
+                      setVarianteSeleccionada(opt.value);
+                      setErrorVariante(false);
+                    }}
+                    className={`
                       py-3 rounded-none border text-sm font-semibold uppercase transition-all
                       ${
                         isSelected
@@ -242,23 +230,21 @@ export function ProductDetail({ camiseta }: Readonly<ProductDetailProps>) {
                             : "border-border/40 bg-transparent text-muted-foreground opacity-40 cursor-not-allowed line-through"
                       }
                     `}
-                    >
-                      {talleOpt.value}
-                    </button>
-                  );
-                },
-              )}
+                  >
+                    {opt.value}
+                  </button>
+                );
+              })}
             </div>
 
-            {errorTalle && (
+            {errorVariante && (
               <p className="text-destructive text-xs font-semibold tracking-wide flex items-center mt-3 animate-in fade-in slide-in-from-top-1">
                 <AlertCircle className="w-4 h-4 mr-1.5" />
-                Selecciona un talle para continuar
+                Selecciona una opción para continuar
               </p>
             )}
           </div>
 
-          {/* Call To Action Flat */}
           <div className="mt-4">
             <button
               onClick={handleAddToCart}

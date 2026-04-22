@@ -8,15 +8,15 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { FilterX, Search, ArrowUpDown } from "lucide-react";
-import { TALLE_OPTIONS, TIPO_OPTIONS } from "@/entities/camisetas/constants";
+import { TALLE_OPTIONS, TIPO_OPTIONS } from "@/entities/productos/constants";
 import { SelectOption } from "@/shared/types/select";
 
 const CATEGORIAS_SIMPLIFICADAS = [
   { value: "todas", label: "Todas las categorías" },
   { value: "2025/2026", label: "25/26" },
   { value: "otras", label: "Otras temporadas" },
-  { value: "especiales", label: "Especiales" },
   { value: "retro", label: "Retro" },
+  { value: "especiales", label: "Especiales" },
 ];
 
 interface FilterToolbarProps {
@@ -30,8 +30,8 @@ interface FilterToolbarProps {
   tipo: string;
   onTipoChange: (value: string) => void;
 
-  talle: string;
-  onTalleChange: (value: string) => void;
+  variante: string;
+  onVarianteChange: (value: string) => void;
 
   orden: string;
   onOrdenChange: (value: string) => void;
@@ -52,8 +52,8 @@ export function FilterToolbar({
   orden,
   tipo,
   onTipoChange,
-  talle,
-  onTalleChange,
+  variante,
+  onVarianteChange,
   onOrdenChange,
   ordenOptions,
   onLimpiar,
@@ -112,10 +112,10 @@ export function FilterToolbar({
         </SelectContent>
       </Select>
 
-      {/* Select de Talle */}
-      <Select value={talle} onValueChange={onTalleChange}>
+      {/* Select de Variante */}
+      <Select value={variante} onValueChange={onVarianteChange}>
         <SelectTrigger className="w-full sm:w-[160px] rounded-none shadow-none cursor-pointer border-border/60 hover:border-foreground/40 bg-white focus:ring-0 transition-colors">
-          <SelectValue placeholder="Talle" />
+          <SelectValue placeholder="Variante" />
         </SelectTrigger>
         <SelectContent className="rounded-none shadow-md">
           {TALLE_OPTIONS.map((opt) => (

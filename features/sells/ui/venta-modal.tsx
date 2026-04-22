@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useActionState, useEffect, useMemo } from "react";
-import { registrarVentaAction } from "../actions/registrar-venta";
-import { getCamisetasAction } from "@/features/stock/actions/stock";
-import { Camiseta } from "@/entities/camisetas/types";
+import { registrarVentaAction } from "../actions/create-venta";
+import { getProductosAction } from "@/features/store/actions/store-actions";
+import { Producto } from "@/entities/productos/types";
+import { CartItem } from "@/entities/cart/types";
 import { toast } from "sonner";
 
 import {
@@ -27,34 +28,23 @@ import { Plus, Loader2, Trash2, ShoppingCart } from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 
 interface Props {
-  camisetas?: Camiseta[];
+  productos?: Producto[];
 }
 
-type CartItem = {
-  camisetaId: string;
-  equipo: string;
-  temporada: string;
-  talle: string;
-  cantidad: number;
-  precioUnitario: number;
-};
-
-export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
+export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
   const [isOpen, setIsOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
-  // Estado del "Carrito de compras"
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Controles temporales para agregar un nuevo ítem
-  const [selectedCamisetaId, setSelectedCamisetaId] = useState<
+  const [selectedProductoId, setSelectedProductoId] = useState<
     string | undefined
   >();
-  const [selectedTalle, setSelectedTalle] = useState<string | undefined>();
+  const [selectedVariante, setSelectedVariante] = useState<string | undefined>();
   const [cantidadToAdd, setCantidadToAdd] = useState<number>(1);
 
   // Estados para manejar el stock en tiempo real
-  const [listaCamisetas, setListaCamisetas] = useState<Camiseta[]>(camisetas);
+  const [listaProductos, setListaProductos] = useState<Producto[]>(productos);
   const [isLoadingStock, setIsLoadingStock] = useState(false);
 
   useEffect(() => {
@@ -63,8 +53,8 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
     const fetchStock = async () => {
       setIsLoadingStock(true);
       try {
-        const res = await getCamisetasAction();
-        if (res.data) setListaCamisetas(res.data);
+        const res = await getProductosAction();
+        if (res.data) setListaProductos(res.data);
       } finally {
         setIsLoadingStock(false);
       }
@@ -94,26 +84,26 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
   );
 
   const resetForm = () => {
-    setSelectedCamisetaId(undefined);
-    setSelectedTalle(undefined);
+    setSelectedProductoId(undefined);
+    setSelectedVariante(undefined);
     setCantidadToAdd(1);
     setItems([]);
     setFormKey((k) => k + 1);
   };
 
-  const camisetaSeleccionada = useMemo(
-    () => listaCamisetas.find((c) => c.id === selectedCamisetaId),
-    [listaCamisetas, selectedCamisetaId],
+  const productoSeleccionado = useMemo(
+    () => listaProductos.find((c) => c.id === selectedProductoId),
+    [listaProductos, selectedProductoId],
   );
 
   // Función para saber cuánto stock queda restando lo que ya agregamos al carrito virtual
-  const getStockDisponible = (talleBuscado: string) => {
+  const getStockDisponible = (varianteBuscado: string) => {
     const stockOriginal =
-      camisetaSeleccionada?.stock?.find((s) => s.talle === talleBuscado)
+      productoSeleccionado?.stock?.find((s) => s.variante === varianteBuscado)
         ?.cantidad || 0;
     const enCarrito = items
       .filter(
-        (i) => i.camisetaId === selectedCamisetaId && i.talle === talleBuscado,
+        (i) => i.productoId === selectedProductoId && i.variante === varianteBuscado,
       )
       .reduce((acc, curr) => acc + curr.cantidad, 0);
     return stockOriginal - enCarrito;
@@ -121,25 +111,25 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
 
   const handleAgregarAlCarrito = () => {
     if (
-      !selectedCamisetaId ||
-      !selectedTalle ||
+      !selectedProductoId ||
+      !selectedVariante ||
       cantidadToAdd < 1 ||
-      !camisetaSeleccionada
+      !productoSeleccionado
     )
       return;
 
-    const disponible = getStockDisponible(selectedTalle);
+    const disponible = getStockDisponible(selectedVariante);
 
     if (cantidadToAdd > disponible) {
       toast.error(
-        `Solo quedan ${disponible} unidades disponibles en talle ${selectedTalle}.`,
+        `Solo quedan ${disponible} unidades disponibles en talle ${selectedVariante}.`,
       );
       return;
     }
 
     // Buscamos si ya existe el mismo modelo+talle en el carrito para sumarle la cantidad
     const existingIndex = items.findIndex(
-      (i) => i.camisetaId === selectedCamisetaId && i.talle === selectedTalle,
+      (i) => i.productoId === selectedProductoId && i.variante === selectedVariante,
     );
 
     if (existingIndex >= 0) {
@@ -150,17 +140,17 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
       setItems([
         ...items,
         {
-          camisetaId: selectedCamisetaId,
-          equipo: camisetaSeleccionada.equipo,
-          temporada: camisetaSeleccionada.temporada,
-          talle: selectedTalle,
+          productoId: selectedProductoId,
+          nombre: productoSeleccionado.nombre,
+          temporada: productoSeleccionado.temporada,
+          variante: selectedVariante,
           cantidad: cantidadToAdd,
-          precioUnitario: camisetaSeleccionada.precio,
+          precioUnitario: productoSeleccionado.precio,
         },
       ]);
     }
 
-    setSelectedTalle(undefined);
+    setSelectedVariante(undefined);
     setCantidadToAdd(1);
   };
 
@@ -198,24 +188,24 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
           {/* SECCIÓN 1: AGREGAR AL CARRITO */}
           <div className="p-4 bg-muted/40 rounded-lg border border-border space-y-4">
             <div className="space-y-2">
-              <Label>1. Seleccionar Camiseta</Label>
+              <Label>1. Seleccionar Producto</Label>
               <Select
-                key={`select-cam-${formKey}`}
-                value={selectedCamisetaId}
+                key={`select-prod-${formKey}`}
+                value={selectedProductoId}
                 onValueChange={(val) => {
-                  setSelectedCamisetaId(val);
-                  setSelectedTalle(undefined);
+                  setSelectedProductoId(val);
+                  setSelectedVariante(undefined);
                 }}
-                disabled={listaCamisetas.length === 0 || isLoadingStock}
+                disabled={listaProductos.length === 0 || isLoadingStock}
               >
                 <SelectTrigger>
                   <SelectValue
                     placeholder={
                       isLoadingStock
                         ? "Cargando stock actual..."
-                        : listaCamisetas.length === 0
+                        : listaProductos.length === 0
                           ? "No hay stock disponible"
-                          : "Busca una camiseta..."
+                          : "Busca un producto..."
                     }
                   />
                   {isLoadingStock && (
@@ -223,10 +213,10 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
                   )}
                 </SelectTrigger>
                 <SelectContent className="z-100">
-                  {listaCamisetas.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.equipo} {c.temporada} ($
-                      {c.precio.toLocaleString("es-AR")})
+                  {listaProductos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nombre} {p.temporada} ($
+                      {p.precio.toLocaleString("es-AR")})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -237,24 +227,24 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
               <div className="space-y-2">
                 <Label>2. Talle</Label>
                 <Select
-                  key={`select-talle-${selectedCamisetaId}-${formKey}`}
-                  value={selectedTalle}
-                  onValueChange={setSelectedTalle}
-                  disabled={!selectedCamisetaId}
+                  key={`select-talle-${selectedProductoId}-${formKey}`}
+                  value={selectedVariante}
+                  onValueChange={setSelectedVariante}
+                  disabled={!selectedProductoId}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona..." />
                   </SelectTrigger>
                   <SelectContent className="z-100">
-                    {camisetaSeleccionada?.stock?.map((s) => {
-                      const disponible = getStockDisponible(s.talle);
+                    {productoSeleccionado?.stock?.map((s) => {
+                      const disponible = getStockDisponible(s.variante);
                       return (
                         <SelectItem
                           key={s.id}
-                          value={s.talle}
+                          value={s.variante}
                           disabled={disponible <= 0}
                         >
-                          {s.talle}{" "}
+                          {s.variante}{" "}
                           {disponible > 0
                             ? `(Quedan ${disponible})`
                             : "(Agotado)"}
@@ -275,7 +265,7 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
                   onChange={(e) =>
                     setCantidadToAdd(Number.parseInt(e.target.value) || 1)
                   }
-                  disabled={!selectedTalle}
+                  disabled={!selectedVariante}
                 />
               </div>
             </div>
@@ -285,7 +275,7 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
               onClick={handleAgregarAlCarrito}
               className="w-full"
               variant="secondary"
-              disabled={!selectedCamisetaId || !selectedTalle}
+              disabled={!selectedProductoId || !selectedVariante}
             >
               <ShoppingCart className="w-4 h-4 mr-2" /> Añadir a la lista
             </Button>
@@ -306,7 +296,7 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
                     >
                       <div>
                         <p className="font-semibold text-sm leading-none">
-                          {item.equipo}{" "}
+                          {item.nombre}{" "}
                           <span className="font-normal text-muted-foreground">
                             ({item.temporada})
                           </span>
@@ -314,7 +304,7 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
                         <p className="text-xs text-muted-foreground mt-1">
                           Talle:{" "}
                           <span className="font-medium text-foreground">
-                            {item.talle}
+                            {item.variante}
                           </span>{" "}
                           | Cant:{" "}
                           <span className="font-medium text-foreground">
@@ -355,7 +345,7 @@ export function RegistrarVentaModal({ camisetas = [] }: Readonly<Props>) {
             </div>
           )}
 
-          {/* FORMULARIO FINAL (Solo contiene el input oculto con el JSON del carrito) */}
+          {/* FORMULARIO FINAL  */}
           <form action={formAction}>
             <input
               type="hidden"
