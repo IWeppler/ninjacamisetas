@@ -47,16 +47,16 @@ export async function crearProductoAction(
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("productos")
+        .from("camisetas")
         .upload(fileName, file);
 
       if (!uploadError) {
         const {
           data: { publicUrl },
-        } = supabase.storage.from("productos").getPublicUrl(fileName);
+        } = supabase.storage.from("camisetas").getPublicUrl(fileName);
         urls.push(publicUrl);
       } else {
-        console.error("Error subiendo archivo:", uploadError);
+        console.error("Error subiendo archivo a Supabase:", uploadError);
       }
     }
 
@@ -74,7 +74,7 @@ export async function crearProductoAction(
   const { data: nuevoProducto, error: errorProducto } = await supabase
     .from("productos")
     .insert({
-      nombre,
+      nombre, 
       temporada,
       tipo,
       precio,
