@@ -139,9 +139,9 @@ export function VentasTable({
     <>
       <Button
         variant="outline"
-        className="w-full sm:w-auto bg-card text-muted-foreground mr-2"
+        className="hidden sm:flex w-full sm:w-auto bg-card text-muted-foreground mr-2 h-9 text-[10px] font-bold uppercase tracking-widest shadow-sm"
       >
-        <Download className="mr-2 h-4 w-4" /> Exportar CSV
+        <Download className="mr-2 h-3.5 w-3.5" /> Exportar CSV
       </Button>
       <RegistrarVentaModal productos={productos} />
     </>

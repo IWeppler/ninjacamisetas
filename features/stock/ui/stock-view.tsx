@@ -19,7 +19,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const ITEMS_POR_PAGINA = 10;
   const [paginaActual, setPaginaActual] = useState(1);
 
-  // Estados de filtros para Stock
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroTemporada, setFiltroTemporada] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -132,15 +131,17 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     filtroVariante !== "todos" ||
     orden !== "recientes";
 
+  // Aquí configuramos los botones de acción para que el Toggle se oculte en mobile,
+  // pero el botón de "Nueva Camiseta" se mantenga siempre visible
   const actionButtons = (
     <>
-      <div className="flex items-center gap-1 bg-muted p-1 rounded-md w-full sm:w-auto justify-center mr-2">
+      <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center mr-2">
         <Button
           variant={view === "table" ? "default" : "ghost"}
-          className={`w-full sm:w-auto font-medium transition-all ${
-            view !== "table"
-              ? "cursor-pointer text-muted-foreground hover:text-foreground"
-              : "shadow-sm bg-neutral-900"
+          className={`font-medium transition-all h-8 ${
+            view === "table"
+              ? "shadow-sm bg-neutral-900 text-white"
+              : "text-muted-foreground"
           }`}
           onClick={() => setView("table")}
         >
@@ -148,19 +149,19 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         </Button>
         <Button
           variant={view === "grid" ? "default" : "ghost"}
-          className={`w-full sm:w-auto font-medium transition-all ${
-            view !== "grid"
-              ? "cursor-pointer text-muted-foreground hover:text-foreground"
-              : "shadow-sm bg-neutral-900"
+          className={`font-medium transition-all h-8 ${
+            view === "grid"
+              ? "shadow-sm bg-neutral-900 text-white"
+              : "text-muted-foreground"
           }`}
           onClick={() => setView("grid")}
         >
           <LayoutGrid className="h-4 w-4 mr-1" /> Grilla
         </Button>
       </div>
-      <div className="w-full sm:w-auto">
-        <CrearProductoModal />
-      </div>
+
+      {/* El botón Modal en sí (Ahora formateado para ser solo '+' en móviles) */}
+      <CrearProductoModal />
     </>
   );
 
@@ -184,14 +185,12 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         actionButtons={actionButtons}
       />
 
-      {/* Le pasamos el array PAGINADO a las vistas */}
       {view === "table" ? (
         <StockTable productos={productosPaginados} />
       ) : (
         <StockGrid productos={productosPaginados} />
       )}
 
-      {/* CONTROLES DE PAGINACIÓN */}
       {totalPaginas > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 border-t border-border mt-4">
           <span className="text-sm text-muted-foreground">
