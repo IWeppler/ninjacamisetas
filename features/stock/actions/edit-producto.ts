@@ -21,7 +21,7 @@ export async function editarProductoAction(
   formData: FormData,
 ) {
   const id = formData.get("id") as string;
-  const nombre = formData.get("nombre") as string;
+  const nombre = (formData.get("nombre") || formData.get("equipo")) as string;
   const temporada = formData.get("temporada") as string;
   const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
@@ -57,13 +57,13 @@ export async function editarProductoAction(
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("productos")
+        .from("camisetas")
         .upload(fileName, file);
 
       if (!uploadError) {
         const {
           data: { publicUrl },
-        } = supabase.storage.from("productos").getPublicUrl(fileName);
+        } = supabase.storage.from("camisetas").getPublicUrl(fileName);
         urls.push(publicUrl);
       }
     }
@@ -106,7 +106,7 @@ export async function editarProductoAction(
     };
   }
 
-  // 4. Actualizamos el stock (Arreglado el bug del Object)
+  // 4. Actualizamos el stock
   const stockParaUpsert = TALLE_OPTIONS.filter(
     (opt) => opt.value !== "todos",
   ).map((opt) => {
