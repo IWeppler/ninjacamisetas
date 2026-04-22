@@ -10,7 +10,7 @@ export async function crearProductoAction(
   prevState: { error: string | null; success: boolean },
   formData: FormData,
 ) {
-  const nombre = formData.get("nombre") as string;
+  const nombre = (formData.get("nombre") || formData.get("equipo")) as string;
   const temporada = formData.get("temporada") as string;
   const tipo = formData.get("tipo") as string;
   const precio = Number.parseFloat(formData.get("precio") as string);
