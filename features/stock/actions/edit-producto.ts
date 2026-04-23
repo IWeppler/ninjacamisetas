@@ -114,7 +114,7 @@ export async function editarProductoAction(
     const cantidad = Number.parseInt(cantidadStr, 10);
     return {
       producto_id: id,
-      variante: opt.value,
+      variante: opt.value.toUpperCase(),
       cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
     };
   });

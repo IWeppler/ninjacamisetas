@@ -12,13 +12,13 @@ export const TIPO_OPTIONS: SelectOption[] = [
 
 export const TALLE_OPTIONS: SelectOption[] = [
   { value: "todos", label: "Todos los talles" },
-  { value: "xs", label: "XS" },
-  { value: "s", label: "S" },
-  { value: "m", label: "M" },
-  { value: "l", label: "L" },
-  { value: "xl", label: "XL" },
-  { value: "xxl", label: "XXL" },
-  { value: "xxxl", label: "XXXL" },
+  { value: "XS", label: "XS" },
+  { value: "S", label: "S" },
+  { value: "M", label: "M" },
+  { value: "L", label: "L" },
+  { value: "XL", label: "XL" },
+  { value: "XXL", label: "XXL" },
+  { value: "XXXL", label: "XXXL" },
 ];
 
 function generarTemporadas(desde: number, hasta: number): SelectOption[] {

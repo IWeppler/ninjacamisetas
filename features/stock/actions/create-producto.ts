@@ -10,6 +10,7 @@ export async function crearProductoAction(
   prevState: { error: string | null; success: boolean },
   formData: FormData,
 ) {
+  // 💡 MODO BOMBERO: Le decimos que busque "nombre" y si no está, que busque "equipo"
   const nombre = (formData.get("nombre") || formData.get("equipo")) as string;
   const temporada = formData.get("temporada") as string;
   const tipo = formData.get("tipo") as string;
@@ -74,7 +75,7 @@ export async function crearProductoAction(
   const { data: nuevoProducto, error: errorProducto } = await supabase
     .from("productos")
     .insert({
-      nombre, 
+      nombre,
       temporada,
       tipo,
       precio,
@@ -101,7 +102,7 @@ export async function crearProductoAction(
       const cantidad = Number.parseInt(cantidadStr, 10);
       return {
         producto_id: nuevoProducto.id,
-        variante: opt.value,
+        variante: opt.value.toUpperCase(),
         cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
       };
     })
