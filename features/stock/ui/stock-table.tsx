@@ -27,8 +27,10 @@ const formatearMoneda = (monto: number) => {
   }).format(monto);
 };
 
+const ORDEN_TALLES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
 export function StockTable({ productos }: Readonly<StockTableProps>) {
-  if (productos.length === 0) {
+  if (!productos || productos.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg border border-border">
         <p className="text-muted-foreground">
@@ -81,6 +83,17 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
             const precioCosto = producto.precio_costo || 0;
             const margenEstiado = producto.precio - precioCosto;
 
+            const stockOrdenado = producto.stock
+              ? [...producto.stock].sort((a, b) => {
+                  const indexA = ORDEN_TALLES.indexOf(a.variante.toUpperCase());
+                  const indexB = ORDEN_TALLES.indexOf(b.variante.toUpperCase());
+                  return (
+                    (indexA === -1 ? 99 : indexA) -
+                    (indexB === -1 ? 99 : indexB)
+                  );
+                })
+              : [];
+
             return (
               <TableRow key={producto.id}>
                 <TableCell>
@@ -110,8 +123,8 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {producto.stock && producto.stock.length > 0 ? (
-                      producto.stock.map((s) => (
+                    {stockOrdenado.length > 0 ? (
+                      stockOrdenado.map((s) => (
                         <Badge
                           key={s.id}
                           variant={s.cantidad > 0 ? "outline" : "destructive"}

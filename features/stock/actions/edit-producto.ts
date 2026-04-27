@@ -110,11 +110,14 @@ export async function editarProductoAction(
   const stockParaUpsert = TALLE_OPTIONS.filter(
     (opt) => opt.value !== "todos",
   ).map((opt) => {
-    const cantidadStr = formData.get(`stock_${opt.value}`) as string;
+    // 💡 FIX AQUÍ: Le pedimos a FormData que busque tanto en mayúscula (stock_XS) como en minúscula (stock_xs)
+    const cantidadStr = (formData.get(`stock_${opt.value}`) ||
+      formData.get(`stock_${opt.value.toLowerCase()}`)) as string;
+
     const cantidad = Number.parseInt(cantidadStr, 10);
     return {
       producto_id: id,
-      variante: opt.value.toUpperCase(),
+      variante: opt.value.toUpperCase(), // Lo guardamos estrictamente en MAYÚSCULA en la BD
       cantidad: Number.isNaN(cantidad) ? 0 : cantidad,
     };
   });
