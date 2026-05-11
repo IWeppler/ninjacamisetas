@@ -9,11 +9,15 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, ShoppingBag, ShoppingCart } from "lucide-react";
 import { EditarProductoModal } from "./edit-modal";
 import { EliminarProductoModal } from "./delete-modal";
 import { TogglePublicado } from "./toggle-publicado";
 import { Producto } from "@/entities/productos/types";
+import { Button } from "@/shared/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import { toast } from "sonner";
+import { useCartStore } from "@/shared/store/cart-store";
 
 interface StockTableProps {
   productos: Producto[];
@@ -30,6 +34,9 @@ const formatearMoneda = (monto: number) => {
 const ORDEN_TALLES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 export function StockTable({ productos }: Readonly<StockTableProps>) {
+  const addItem = useCartStore((state: any) => state.addItem);
+  const setIsOpen = useCartStore((state: any) => state.setIsOpen);
+
   if (!productos || productos.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg border border-border">
@@ -39,6 +46,49 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
       </div>
     );
   }
+
+  // Ahora la venta rápida impacta el estado global y abre el sidebar
+  const handleAñadirAlCarrito = (producto: Producto, variante: string) => {
+    // Buscamos el stock máximo de esa variante para limitarlo en el carrito
+    const stockDeVariante =
+      producto.stock?.find((s) => s.variante === variante)?.cantidad || 0;
+
+    // Obtenemos la primera imagen para el carrito de forma segura
+    let primeraImagen = null;
+    if (Array.isArray(producto.imagen_url) && producto.imagen_url.length > 0) {
+      primeraImagen = producto.imagen_url[0];
+    } else if (typeof producto.imagen_url === "string") {
+      try {
+        const parsed = JSON.parse(producto.imagen_url);
+        primeraImagen = Array.isArray(parsed) ? parsed[0] : producto.imagen_url;
+      } catch {
+        primeraImagen = producto.imagen_url;
+      }
+    }
+
+    // Armamos el objeto tal cual lo espera tu cart-sidebar
+    const itemData = {
+      productoId: producto.id,
+      nombre: producto.nombre,
+      temporada: producto.temporada,
+      variante: variante,
+      cantidad: 1,
+      precio: producto.precio,
+      precioUnitario: producto.precio,
+      imagenUrl: primeraImagen,
+      stockMaximo: stockDeVariante,
+    };
+
+    if (addItem) {
+      addItem(itemData);
+      setIsOpen(true);
+      toast.success("Añadido al carrito", {
+        description: `1x ${producto.nombre} (Talle: ${variante})`,
+      });
+    } else {
+      toast.error("El método addItem no existe en el cart-store");
+    }
+  };
 
   return (
     <div className="rounded-md border border-border bg-card">
@@ -160,6 +210,54 @@ export function StockTable({ productos }: Readonly<StockTableProps>) {
 
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
+                    {/* Botón de Venta Rápida */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-foreground/80 h-8 w-8 cursor-pointer"
+                          title="Venta Rápida"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-52 p-3 z-10" align="end">
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-semibold leading-none">
+                              Añadir al carrito
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Selecciona el talle a vender:
+                            </p>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {stockOrdenado.length > 0 ? (
+                              stockOrdenado.map((s) => (
+                                <Button
+                                  key={s.id}
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={s.cantidad <= 0}
+                                  onClick={() =>
+                                    handleAñadirAlCarrito(producto, s.variante)
+                                  }
+                                  className="h-8 text-xs font-medium"
+                                >
+                                  {s.variante}
+                                </Button>
+                              ))
+                            ) : (
+                              <p className="text-xs text-muted-foreground col-span-3 text-center py-2">
+                                Sin stock disponible
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
                     <EditarProductoModal producto={producto} />
                     <EliminarProductoModal
                       id={producto.id}

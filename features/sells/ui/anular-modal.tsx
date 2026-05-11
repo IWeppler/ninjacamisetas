@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { anularVentaAction } from "../actions/anular-venta";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ export function AnularVentaModal({
 }: Readonly<AnularVentaModalProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleAnular = () => {
     startTransition(async () => {
@@ -48,6 +50,8 @@ export function AnularVentaModal({
             `Venta anulada. Se han devuelto ${cantidad} unidad(es) de talle ${variante} al stock.`,
           );
         }
+
+        router.refresh();
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -60,7 +64,7 @@ export function AnularVentaModal({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+          className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors cursor-pointer"
           title="Anular venta"
         >
           <RotateCcw className="h-4 w-4" />
@@ -71,25 +75,28 @@ export function AnularVentaModal({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>¿Anular esta venta?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
+          {/* 💡 FIX: Usamos span en lugar de p para evitar el error de hidratación */}
+          <AlertDialogDescription className="text-sm">
+            <span>
               Estás a punto de anular la venta de{" "}
-              <span className="font-bold">
+              <span className="font-bold text-foreground">
                 {cantidad}x {productoNombre} (Talle {variante})
               </span>
               .
-            </p>
+            </span>
+            <br />
+            <br />
             {isProductoEliminado ? (
-              <p className="text-destructive font-medium">
+              <span className="text-destructive font-medium">
                 Nota: El producto original ha sido eliminado del sistema. La
                 venta se borrará del historial, pero no se puede restaurar el
                 stock.
-              </p>
+              </span>
             ) : (
-              <p className="text-muted-foreground">
+              <span>
                 El registro se eliminará del historial y el stock volverá
                 automáticamente al inventario.
-              </p>
+              </span>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>

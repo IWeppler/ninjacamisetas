@@ -151,11 +151,8 @@ export function VentasTable({
     return (
       <div className="space-y-4">
         <FilterToolbar
-          searchQuery={filtroNombre}
-          onSearchChange={setFiltroNombre}
-          searchPlaceholder="Buscar por equipo..."
-          temporada={filtroTemporada}
-          onTemporadaChange={setFiltroTemporada}
+          categoria={filtroTemporada}
+          onCategoriaChange={setFiltroTemporada}
           tipo={filtroTipo}
           onTipoChange={setFiltroTipo}
           variante={filtroVariante}
@@ -183,11 +180,8 @@ export function VentasTable({
   return (
     <div className="space-y-4">
       <FilterToolbar
-        searchQuery={filtroNombre}
-        onSearchChange={setFiltroNombre}
-        searchPlaceholder="Buscar por equipo..."
-        temporada={filtroTemporada}
-        onTemporadaChange={setFiltroTemporada}
+        categoria={filtroTemporada}
+        onCategoriaChange={setFiltroTemporada}
         tipo={filtroTipo}
         onTipoChange={setFiltroTipo}
         variante={filtroVariante}

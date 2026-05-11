@@ -73,7 +73,6 @@ export function EditarProductoModal({
     { error: null, success: false },
   );
 
-  // Procesamos las imágenes existentes en la base de datos
   let imagenesExistentes: string[] = [];
   if (Array.isArray(producto.imagen_url)) {
     imagenesExistentes = producto.imagen_url;
@@ -102,7 +101,7 @@ export function EditarProductoModal({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900/20 transition-colors cursor-pointer"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground/80 hover:bg-muted/80 transition-colors cursor-pointer"
           title="Editar producto"
         >
           <Pencil className="h-4 w-4" />
@@ -308,7 +307,11 @@ export function EditarProductoModal({
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button
+              type="submit"
+              className="w-full h-10 cursor-pointer"
+              disabled={isPending}
+            >
               {isPending ? "Actualizando..." : "Guardar Cambios"}
             </Button>
           </form>

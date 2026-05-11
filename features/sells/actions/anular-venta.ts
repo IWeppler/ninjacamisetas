@@ -9,29 +9,38 @@ export async function anularVentaAction(ventaId: string) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    // 1. Obtener detalles de la venta antes de borrarla
-    const { data: venta, error: fetchError } = await supabase
+    // 1. Primero LEEMOS la venta antes de borrarla
+    const { data: venta, error: selectError } = await supabase
       .from("ventas")
       .select("producto_id, variante, cantidad")
       .eq("id", ventaId)
       .single();
 
-    if (fetchError || !venta) {
-      return { error: "No se encontró la venta solicitada.", success: false };
+    if (selectError || !venta) {
+      console.warn("Venta no encontrada", selectError);
+      return {
+        error: "Esta venta no existe en el sistema.",
+        success: false,
+      };
     }
 
-    // 2. Eliminar el registro de la venta
-    const { error: deleteError } = await supabase
+    // 2. Luego la BORRAMOS por separado
+    const { error: deleteError, count } = await supabase
       .from("ventas")
       .delete()
       .eq("id", ventaId);
 
+    console.log("Delete result:", { deleteError, count });
+
     if (deleteError) {
-      console.error(deleteError);
-      return { error: "Error al intentar anular la venta.", success: false };
+      console.error("Error al borrar la venta", deleteError);
+      return {
+        error: "No se pudo anular la venta.",
+        success: false,
+      };
     }
 
-    // 3. Restaurar stock (Solo si el producto original aún existe)
+    // 3. Restaurar stock
     if (venta.producto_id) {
       const { data: stockActual } = await supabase
         .from("productos_stock")
@@ -54,10 +63,7 @@ export async function anularVentaAction(ventaId: string) {
       }
     }
 
-    // 4. Refrescamos las vistas
-    revalidatePath("/ventas");
-    revalidatePath("/stock");
-
+    revalidatePath("/", "layout");
     return { error: null, success: true };
   } catch (err) {
     console.error("Error in anularVentaAction:", err);

@@ -6,8 +6,6 @@ export const TIPO_OPTIONS: SelectOption[] = [
   { value: "visitante", label: "Visitante" },
   { value: "alternativa", label: "Alternativa" },
   { value: "retro", label: "Retro" },
-  { value: "seleccion", label: "Selección" },
-  { value: "arquero", label: "Arquero" },
 ];
 
 export const TALLE_OPTIONS: SelectOption[] = [

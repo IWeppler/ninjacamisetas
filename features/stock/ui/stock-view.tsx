@@ -103,14 +103,14 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     setPaginaActual(1);
   };
 
-  const handleFiltroNombre = (v: string) => {
-    setFiltroNombre(v);
-    setPaginaActual(1);
-  };
-  const handleFiltroTemporada = (v: string) => {
-    setFiltroTemporada(v);
-    setPaginaActual(1);
-  };
+  // const handleFiltroNombre = (v: string) => {
+  //   setFiltroNombre(v);
+  //   setPaginaActual(1);
+  // };
+  // const handleFiltroTemporada = (v: string) => {
+  //   setFiltroTemporada(v);
+  //   setPaginaActual(1);
+  // };
   const handleFiltroTipo = (v: string) => {
     setFiltroTipo(v);
     setPaginaActual(1);
@@ -131,8 +131,6 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
     filtroVariante !== "todos" ||
     orden !== "recientes";
 
-  // Aquí configuramos los botones de acción para que el Toggle se oculte en mobile,
-  // pero el botón de "Nueva Camiseta" se mantenga siempre visible
   const actionButtons = (
     <>
       <div className="hidden sm:flex items-center gap-1 bg-muted p-1 rounded-md justify-center mr-2">
@@ -160,7 +158,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
         </Button>
       </div>
 
-      {/* El botón Modal en sí (Ahora formateado para ser solo '+' en móviles) */}
+      {/* El botón Modal */}
       <CrearProductoModal />
     </>
   );
@@ -168,11 +166,8 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   return (
     <div className="space-y-4">
       <FilterToolbar
-        searchQuery={filtroNombre}
-        onSearchChange={handleFiltroNombre}
-        searchPlaceholder="Buscar por nombre..."
-        temporada={filtroTemporada}
-        onTemporadaChange={handleFiltroTemporada}
+        categoria={filtroTemporada}
+        onCategoriaChange={setFiltroTemporada}
         tipo={filtroTipo}
         onTipoChange={handleFiltroTipo}
         variante={filtroVariante}

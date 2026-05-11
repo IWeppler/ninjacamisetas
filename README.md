@@ -1,36 +1,22 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+3. La Visión a Mediano Plazo: El POS Definitivo
 
-## Getting Started
+Para que tu software compita con los grandes del mercado, eventualmente deberás pasar de un "Modal de Ventas" a una Pantalla Dedicada de POS.
 
-First, run the development server:
+Aquí tienes 3 recomendaciones estratégicas para tu Roadmap:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+El Carrito Global Flotante (Global State Cart):
+En lugar de un modal que atrapa al usuario, usa un panel lateral derecho (Drawer/Sidebar) que actúe como un "Ticket de compra en vivo". El usuario puede navegar por el Inventario, hacer clic en productos, y la lista se va armando a la derecha. Cuando termina, le da a "Cobrar".
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Preparación para Lector de Código de Barras (Escalabilidad):
+Los POS más rápidos no usan el mouse. Si en el futuro tus camisetas tienen etiquetas, el sistema debería tener un "Global Listener". Si la aplicación detecta un escaneo rápido de teclado (los lectores de barras simulan tipeo muy rápido seguido de un Enter), el producto se añade automáticamente al carrito sin importar en qué pantalla esté el usuario.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Gestión de Ventas Múltiples:
+Actualmente tu modal dice "1. Seleccionar Producto", "2. Talle", "3. Cantidad" y "Añadir a la lista". Esto está bien estructurado, pero asegúrate de que el estado de "la lista" sea claramente visible antes de presionar el botón verde final de "Confirmar Venta", para que el usuario pueda editar si se equivocó o si el cliente se arrepiente en el último segundo.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Resumen de Acciones (Next Steps)
 
-## Learn More
+Prioridad 1: Reemplazar el Dropdown de productos en el modal por un componente Autocomplete (Searchable Select). Esto es crítico para la usabilidad.
 
-To learn more about Next.js, take a look at the following resources:
+Prioridad 2: En la tabla de inventario, agregar una columna "Vender Rápido" con un ícono 🛒 que despliegue un modal pre-completado con ese producto, o un popover para seleccionar el talle.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Prioridad 3: Rediseñar la experiencia completa hacia un modelo de "Pantalla Dividida" (Split Screen POS) para cuando el volumen de clientes aumente.

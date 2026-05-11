@@ -2,6 +2,8 @@ import { createClient } from "@/shared/config/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/shared/components/sidebar";
+import { CartSidebar } from "@/shared/components/cart-sidebar";
+import { DashboardNavbar } from "@/shared/components/dashboard-navbar";
 
 export default async function DashboardLayout({
   children,
@@ -21,11 +23,22 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* 1. Navegación Lateral  */}
       <Sidebar />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[100vw]">
-        {children}
-      </main>
+
+      {/* Contenedor principal de la derecha */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* 2. Cabecera superior exclusiva del POS */}
+        <DashboardNavbar />
+
+        {/* Contenido dinámico de las páginas (Ej: StockView) */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+
+      <CartSidebar />
     </div>
   );
 }

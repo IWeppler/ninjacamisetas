@@ -1,4 +1,4 @@
-import { getProductosAction } from "@/features/store/actions/store-actions";
+import { getProductosAction } from "@/shared/actions/store-actions";
 import { StoreCatalog } from "@/features/store/components/store-catalog";
 import { FaInstagram } from "react-icons/fa";
 

@@ -69,7 +69,7 @@ export function CrearProductoModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-full sm:w-auto py-4">
+        <Button className="w-full h-10 sm:w-auto py-4 cursor-pointer">
           <Plus className="mr-2 h-4 w-4" /> Nueva Camiseta
         </Button>
       </DialogTrigger>
@@ -240,7 +240,7 @@ export function CrearProductoModal() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button type="submit" className="w-full h-10" disabled={isPending}>
               {isPending ? "Guardando..." : "Guardar Producto"}
             </Button>
           </form>

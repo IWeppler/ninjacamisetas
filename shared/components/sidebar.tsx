@@ -53,9 +53,10 @@ export function Sidebar() {
 
       {/* OVERLAY OSCURO */}
       {isOpen && (
-        <div
+        <button
           className="md:hidden fixed inset-0 top-[69px] bg-black/40 z-40 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
+          aria-label="Cerrar menú"
         />
       )}
 
@@ -95,7 +96,7 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsOpen(false)} // Cierra el menú al navegar
+                onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
                   isActive
                     ? "bg-neutral-200 text-neutral-900"

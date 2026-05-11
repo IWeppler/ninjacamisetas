@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { TALLE_OPTIONS } from "@/entities/productos/constants";
-import { useCartStore } from "@/features/store/store/cart-store";
+import { useCartStore } from "@/shared/store/cart-store";
 import { toast } from "sonner";
 
 interface ProductDetailProps {

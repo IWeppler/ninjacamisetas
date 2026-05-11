@@ -1,5 +1,5 @@
 import { Navbar } from "@/shared/components/navbar";
-import { CartSidebar } from "@/features/store/components/cart-sidebar";
+import { CartSidebar } from "@/shared/components/cart-sidebar";
 
 export const metadata = {
   title: "Tienda Oficial | Ninja Camisetas",

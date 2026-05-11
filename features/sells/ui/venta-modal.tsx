@@ -2,7 +2,7 @@
 
 import { useState, useActionState, useEffect, useMemo } from "react";
 import { registrarVentaAction } from "../actions/create-venta";
-import { getProductosAction } from "@/features/store/actions/store-actions";
+import { getProductosAction } from "@/shared/actions/store-actions";
 import { Producto } from "@/entities/productos/types";
 import { CartItem } from "@/entities/cart/types";
 import { toast } from "sonner";
@@ -24,23 +24,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Plus, Loader2, Trash2, ShoppingCart } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Trash2,
+  ShoppingCart,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { ScrollArea } from "@/shared/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/shared/ui/command";
 
 interface Props {
   productos?: Producto[];
 }
 
+type ProductoConImagenPreview = Producto & {
+  imagen?: string | null;
+  imageUrl?: string | null;
+};
+
+const getProductoImagenPreview = (producto: ProductoConImagenPreview) =>
+  producto.imagen || producto.imageUrl || null;
+
+const getStockLabel = (disponible: number) =>
+  disponible > 0 ? `(Quedan ${disponible})` : "(Agotado)";
+
 export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
   const [isOpen, setIsOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
+
+  const [openCombobox, setOpenCombobox] = useState(false);
 
   const [items, setItems] = useState<CartItem[]>([]);
 
   const [selectedProductoId, setSelectedProductoId] = useState<
     string | undefined
   >();
-  const [selectedVariante, setSelectedVariante] = useState<string | undefined>();
+  const [selectedVariante, setSelectedVariante] = useState<
+    string | undefined
+  >();
   const [cantidadToAdd, setCantidadToAdd] = useState<number>(1);
 
   // Estados para manejar el stock en tiempo real
@@ -63,7 +94,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
     fetchStock();
   }, [isOpen]);
 
-  const [state, formAction, isPending] = useActionState(
+  const [, formAction, isPending] = useActionState(
     async (
       prevState: { error: string | null; success: boolean },
       formData: FormData,
@@ -89,6 +120,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
     setCantidadToAdd(1);
     setItems([]);
     setFormKey((k) => k + 1);
+    setOpenCombobox(false);
   };
 
   const productoSeleccionado = useMemo(
@@ -96,18 +128,50 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
     [listaProductos, selectedProductoId],
   );
 
-  // Función para saber cuánto stock queda restando lo que ya agregamos al carrito virtual
-  const getStockDisponible = (varianteBuscado: string) => {
-    const stockOriginal =
-      productoSeleccionado?.stock?.find((s) => s.variante === varianteBuscado)
-        ?.cantidad || 0;
-    const enCarrito = items
-      .filter(
-        (i) => i.productoId === selectedProductoId && i.variante === varianteBuscado,
-      )
-      .reduce((acc, curr) => acc + curr.cantidad, 0);
-    return stockOriginal - enCarrito;
-  };
+  const stockDisponiblePorVariante = useMemo(() => {
+    const cantidadesEnCarrito = items.reduce<Record<string, number>>(
+      (acc, item) => {
+        if (item.productoId !== selectedProductoId) return acc;
+
+        return {
+          ...acc,
+          [item.variante]: (acc[item.variante] ?? 0) + item.cantidad,
+        };
+      },
+      {},
+    );
+
+    return (productoSeleccionado?.stock ?? []).reduce<Record<string, number>>(
+      (acc, stock) => ({
+        ...acc,
+        [stock.variante]:
+          stock.cantidad - (cantidadesEnCarrito[stock.variante] ?? 0),
+      }),
+      {},
+    );
+  }, [items, productoSeleccionado?.stock, selectedProductoId]);
+
+  const getStockDisponible = (varianteBuscado: string) =>
+    stockDisponiblePorVariante[varianteBuscado] ?? 0;
+
+  const productoTriggerContent = useMemo(() => {
+    if (productoSeleccionado) {
+      return (
+        <span className="truncate">
+          {productoSeleccionado.nombre} {productoSeleccionado.temporada}{" "}
+          <span className="text-green-600 font-medium ml-1">
+            ${productoSeleccionado.precio.toLocaleString("es-AR")}
+          </span>
+        </span>
+      );
+    }
+
+    if (isLoadingStock) return "Cargando stock actual...";
+
+    if (listaProductos.length === 0) return "No hay stock disponible";
+
+    return "Busca un producto...";
+  }, [isLoadingStock, listaProductos.length, productoSeleccionado]);
 
   const handleAgregarAlCarrito = () => {
     if (
@@ -127,18 +191,23 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
       return;
     }
 
-    // Buscamos si ya existe el mismo modelo+talle en el carrito para sumarle la cantidad
-    const existingIndex = items.findIndex(
-      (i) => i.productoId === selectedProductoId && i.variante === selectedVariante,
-    );
+    setItems((currentItems) => {
+      const existingItem = currentItems.find(
+        (i) =>
+          i.productoId === selectedProductoId && i.variante === selectedVariante,
+      );
 
-    if (existingIndex >= 0) {
-      const newItems = [...items];
-      newItems[existingIndex].cantidad += cantidadToAdd;
-      setItems(newItems);
-    } else {
-      setItems([
-        ...items,
+      if (existingItem) {
+        return currentItems.map((item) =>
+          item.productoId === selectedProductoId &&
+          item.variante === selectedVariante
+            ? { ...item, cantidad: item.cantidad + cantidadToAdd }
+            : item,
+        );
+      }
+
+      return [
+        ...currentItems,
         {
           productoId: selectedProductoId,
           nombre: productoSeleccionado.nombre,
@@ -147,23 +216,27 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
           cantidad: cantidadToAdd,
           precioUnitario: productoSeleccionado.precio,
         },
-      ]);
-    }
+      ];
+    });
 
     setSelectedVariante(undefined);
     setCantidadToAdd(1);
   };
 
   const handleEliminarDelCarrito = (index: number) => {
-    const newItems = [...items];
-    newItems.splice(index, 1);
-    setItems(newItems);
+    setItems((currentItems) => currentItems.filter((_, dtl) => dtl !== index));
   };
 
-  const totalVenta = items.reduce(
-    (acc, item) => acc + item.cantidad * item.precioUnitario,
-    0,
+  const totalVenta = useMemo(
+    () =>
+      items.reduce(
+        (acc, item) => acc + item.cantidad * item.precioUnitario,
+        0,
+      ),
+    [items],
   );
+
+  const hasItems = items.length > 0;
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -173,7 +246,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white">
+        <Button className="w-full h-10 sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer">
           <Plus className="mr-2 h-4 w-4" /> Registrar Venta
         </Button>
       </DialogTrigger>
@@ -189,38 +262,76 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
           <div className="p-4 bg-muted/40 rounded-lg border border-border space-y-4">
             <div className="space-y-2">
               <Label>1. Seleccionar Producto</Label>
-              <Select
-                key={`select-prod-${formKey}`}
-                value={selectedProductoId}
-                onValueChange={(val) => {
-                  setSelectedProductoId(val);
-                  setSelectedVariante(undefined);
-                }}
-                disabled={listaProductos.length === 0 || isLoadingStock}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingStock
-                        ? "Cargando stock actual..."
-                        : listaProductos.length === 0
-                          ? "No hay stock disponible"
-                          : "Busca un producto..."
-                    }
-                  />
-                  {isLoadingStock && (
-                    <Loader2 className="animate-spin h-4 w-4 ml-2 opacity-50" />
-                  )}
-                </SelectTrigger>
-                <SelectContent className="z-100">
-                  {listaProductos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nombre} {p.temporada} ($
-                      {p.precio.toLocaleString("es-AR")})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCombobox}
+                    className="w-full justify-between font-normal bg-background h-10"
+                    disabled={listaProductos.length === 0 || isLoadingStock}
+                  >
+                    {productoTriggerContent}
+                    {isLoadingStock ? (
+                      <Loader2 className="animate-spin h-4 w-4 ml-2 opacity-50 shrink-0" />
+                    ) : (
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[480px] p-0 z-[100]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar por nombre, temporada..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                      <CommandGroup>
+                        {listaProductos.map((p) => {
+                          const imagenPreview = getProductoImagenPreview(p);
+
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.nombre} ${p.temporada}`} // Permite búsqueda fuzzy usando nombre y temporada
+                              onSelect={() => {
+                                setSelectedProductoId(p.id);
+                                setSelectedVariante(undefined);
+                                setOpenCombobox(false);
+                              }}
+                              className="flex items-center gap-3 cursor-pointer py-2"
+                            >
+                              <div className="h-10 w-10 rounded-md bg-neutral-100 flex items-center justify-center overflow-hidden shrink-0 border border-neutral-200">
+                              {imagenPreview ? (
+                                <img
+                                  src={imagenPreview}
+                                  alt={p.nombre}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ShoppingCart className="h-4 w-4 text-neutral-400" />
+                              )}
+                              </div>
+                              <div className="flex flex-col flex-1">
+                              <span className="font-medium text-sm">
+                                {p.nombre}{" "}
+                                <span className="text-muted-foreground font-normal">
+                                  ({p.temporada})
+                                </span>
+                              </span>
+                              <span className="text-xs text-green-600 font-medium">
+                                ${p.precio.toLocaleString("es-AR")}
+                              </span>
+                              </div>
+                              <Check
+                              className={`ml-auto h-4 w-4 transition-opacity ${selectedProductoId === p.id ? "opacity-100" : "opacity-0"}`}
+                              />
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -244,10 +355,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
                           value={s.variante}
                           disabled={disponible <= 0}
                         >
-                          {s.variante}{" "}
-                          {disponible > 0
-                            ? `(Quedan ${disponible})`
-                            : "(Agotado)"}
+                          {s.variante} {getStockLabel(disponible)}
                         </SelectItem>
                       );
                     })}
@@ -273,7 +381,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
             <Button
               type="button"
               onClick={handleAgregarAlCarrito}
-              className="w-full"
+              className="w-full h-10"
               variant="secondary"
               disabled={!selectedProductoId || !selectedVariante}
             >
@@ -282,7 +390,7 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
           </div>
 
           {/* SECCIÓN 2: LISTA DE CARRITO Y TOTAL */}
-          {items.length > 0 && (
+          {hasItems && (
             <div className="space-y-3">
               <Label className="text-muted-foreground uppercase text-xs tracking-wider font-bold">
                 Detalle de la venta
@@ -354,8 +462,8 @@ export function RegistrarVentaModal({ productos = [] }: Readonly<Props>) {
             />
             <Button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-              disabled={isPending || items.length === 0}
+              className="w-full h-10 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              disabled={isPending || !hasItems}
             >
               {isPending ? (
                 <Loader2 className="animate-spin h-5 w-5" />
