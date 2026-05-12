@@ -23,7 +23,7 @@ import { useState } from "react";
 
 // Categorías limpias y con sentido comercial
 const CATEGORIAS_SIMPLIFICADAS = [
-  { value: "todas", label: "Todas las categorías" },
+  { value: "todas", label: "Categorias" },
   { value: "actual", label: "Temporada Actual" },
   { value: "otras", label: "Otras temporadas" },
   { value: "retro", label: "Retro / Históricas" },
@@ -236,7 +236,7 @@ export function FilterToolbar({
       {/* DESKTOP TOOLBAR */}
       <div className="hidden sm:flex flex-wrap items-center justify-between py-3 border-b border-border bg-white mb-6">
         {/* Lado Izquierdo: Filtros */}
-        <div className="flex items-center gap-3 pl-2">
+        <div className="flex items-center gap-3 pl-1">
           <span className="uppercase tracking-widest text-[10px] font-semibold text-muted-foreground mr-1">
             Filtros:
           </span>
@@ -314,9 +314,7 @@ export function FilterToolbar({
 
         {/* Lado Derecho: Ordenar & Acciones */}
         <div className="flex items-center gap-3 ml-auto">
-          <span className="uppercase tracking-widest text-[10px] font-semibold text-muted-foreground mr-1">
-            Ordenar:
-          </span>
+         
 
           <Select value={orden} onValueChange={onOrdenChange}>
             <SelectTrigger className="w-auto min-w-[190px] rounded-none shadow-none cursor-pointer border-0 bg-[#f5f4f4] focus:ring-0 transition-colors text-[11px] uppercase tracking-widest font-semibold h-10 px-4">

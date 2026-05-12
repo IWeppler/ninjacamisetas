@@ -46,7 +46,7 @@ export function LoginForm() {
         </div>
       )}
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button type="submit" disabled={isPending} className="w-full h-10">
         {isPending ? "Ingresando..." : "Ingresar"}
       </Button>
     </form>

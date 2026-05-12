@@ -26,7 +26,7 @@ export function StockView({ productos }: Readonly<StockViewProps>) {
   const [orden, setOrden] = useState("recientes");
 
   const ordenOptions = [
-    { value: "recientes", label: "Agregados recientemente" },
+    { value: "recientes", label: "Más recientes" },
     { value: "antiguos", label: "Más antiguos" },
     { value: "mayor_precio", label: "Mayor precio" },
     { value: "menor_precio", label: "Menor precio" },

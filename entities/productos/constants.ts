@@ -1,7 +1,7 @@
 import { SelectOption } from "@/shared/types/select";
 
 export const TIPO_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Todos los tipos" },
+  { value: "todos", label: "Tipos" },
   { value: "local", label: "Local" },
   { value: "visitante", label: "Visitante" },
   { value: "alternativa", label: "Alternativa" },
@@ -9,7 +9,7 @@ export const TIPO_OPTIONS: SelectOption[] = [
 ];
 
 export const TALLE_OPTIONS: SelectOption[] = [
-  { value: "todos", label: "Todos los talles" },
+  { value: "todos", label: "Talles" },
   { value: "XS", label: "XS" },
   { value: "S", label: "S" },
   { value: "M", label: "M" },

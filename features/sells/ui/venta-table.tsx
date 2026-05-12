@@ -139,7 +139,7 @@ export function VentasTable({
     <>
       <Button
         variant="outline"
-        className="hidden sm:flex w-full sm:w-auto bg-card text-muted-foreground mr-2 h-9 text-[10px] font-bold uppercase tracking-widest shadow-sm"
+        className="hidden sm:flex w-full sm:w-auto bg-card text-muted-foreground mr-2 h-10 text-[10px] font-bold uppercase tracking-widest"
       >
         <Download className="mr-2 h-3.5 w-3.5" /> Exportar CSV
       </Button>
